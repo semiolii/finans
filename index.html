@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ArtıEksi | Ultimate Finans</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#09090b">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #020403;
+            color: #fafafa;
+            overscroll-behavior-y: contain;
+        }
+        
+        .card-shadow {
+            box-shadow: 0 10px 20px -3px rgba(16, 185, 129, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.5);
+            border: 1px solid #18181b;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+
+        .simulation-gradient { background: linear-gradient(135deg, #059669 0%, #000000 100%); }
+        
+        .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+        .animate-slide-out { animation: slideOut 0.4s ease-out forwards; }
+        .animate-pulse-slow { animation: pulse 3s infinite; }
+        .animate-record { animation: pulse-red 1.5s infinite; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideOut { to { opacity: 0; transform: translateX(20px); height: 0; padding: 0; margin: 0; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        input, select { color-scheme: dark; }
+        .logo-glow { filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0.5)); }
+        button, select { touch-action: manipulation; }
+        
+        .text-theme-main { color: #34d399; }
+        .bg-theme-main { background-color: #059669; }
+        
+        .day-cell { transition: all 0.2s; }
+        .day-cell:hover { transform: scale(1.1); z-index: 10; border-color: white; }
+
+        .privacy-blur { filter: blur(5px); transition: filter 0.3s; cursor: pointer; user-select: none; }
+        .privacy-blur:hover { filter: blur(0); }
+    </style>
+</head>
+<body class="antialiased pb-12 bg-black">
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigasyon -->
+        <nav class="bg-black/80 backdrop-blur-md border-b border-zinc-900 px-6 py-4 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-3 group">
+                    <div class="bg-theme-main p-2 rounded-xl shadow-lg shadow-emerald-900/40 logo-glow transition-transform group-hover:scale-105">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <span class="text-2xl font-black tracking-tighter text-white">Artı<span class="text-theme-main">Eksi</span></span>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button onclick="togglePrivacy()" id="privacy-btn" class="p-2 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all" title="Gizlilik Modu">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    </button>
+                    <div id="current-date" class="hidden sm:block text-[10px] font-bold text-emerald-500/60 bg-emerald-900/10 px-4 py-2 rounded-full border border-emerald-900/20 uppercase tracking-widest"></div>
+                    <button onclick="openSettingsModal()" class="text-zinc-400 hover:text-emerald-400 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8">
+            
+            <!-- 1. AKILLI ANALİZ -->
+            <div id="smart-insight-bar" class="hidden bg-gradient-to-r from-emerald-900/30 to-teal-900/30 border border-emerald-500/20 p-4 rounded-2xl flex items-start gap-3 animate-fade-in">
+                <div class="bg-emerald-500/20 p-2 rounded-lg text-emerald-400 animate-pulse-slow">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <div class="flex-grow">
+                    <h4 class="text-xs font-bold text-emerald-300 uppercase tracking-widest mb-1">Finansal Zeka</h4>
+                    <p id="smart-insight-text" class="text-sm text-zinc-300 font-medium">Verileriniz analiz ediliyor...</p>
+                </div>
+                <button onclick="openSimulatorModal()" class="hidden sm:flex items-center gap-1 text-[10px] font-bold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-all text-white border border-white/10">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    ZAMAN MAKİNESİ
+                </button>
+            </div>
+
+            <!-- 2. ÜST ÖZET -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 animate-fade-in">
+                <div class="bg-zinc-900 p-8 rounded-3xl border border-zinc-800 card-shadow text-center group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity"><svg class="w-16 h-16 text-emerald-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.15-1.46-3.27-3.4h1.97c.1 1.05.95 1.77 2.59 1.77 1.28 0 2.03-.66 2.03-1.58 0-1.03-.81-1.58-2.61-2-2.25-.52-4.01-1.36-4.01-3.69 0-2.02 1.57-3.4 3.3-3.71V3.5h2.66v1.96c1.61.32 2.89 1.35 3.03 3.25h-1.95c-.15-.99-.86-1.65-2.26-1.65-1.12 0-1.88.66-1.88 1.51 0 1.06.94 1.51 2.72 1.95 2.19.53 3.9 1.38 3.9 3.73.01 2.15-1.58 3.6-3.56 3.84z"/></svg></div>
+                    <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-1 group-hover:text-emerald-400 transition-colors">Toplam Gelir</span>
+                    <div id="total-income" class="money-val text-3xl font-black text-emerald-500 tracking-tight">0.00 ₺</div>
+                </div>
+                <div class="bg-zinc-900 p-8 rounded-3xl border border-zinc-800 card-shadow text-center group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity"><svg class="w-16 h-16 text-rose-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/></svg></div>
+                    <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-1 group-hover:text-rose-500 transition-colors">Toplam Gider</span>
+                    <div id="total-expense" class="money-val text-3xl font-black text-rose-500 tracking-tight">0.00 ₺</div>
+                </div>
+                <div class="bg-theme-main p-8 rounded-3xl border border-emerald-500 card-shadow text-center text-white relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+                    <span class="text-[10px] font-black text-emerald-100/70 uppercase tracking-widest block mb-1">Cüzdan Bakiyesi</span>
+                    <div id="net-balance" class="money-val text-3xl font-black relative z-10 tracking-tight drop-shadow-md">0.00 ₺</div>
+                    <div class="absolute -right-4 -bottom-4 text-emerald-900/30 group-hover:scale-110 transition-transform">
+                        <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BÜTÇE LİMİTLERİ (GERİ GETİRİLDİ) -->
+            <div id="budget-section" class="bg-zinc-900/80 p-6 rounded-3xl border border-zinc-800 card-shadow animate-fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-zinc-100 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path></svg>
+                        Bütçe Takibi
+                    </h3>
+                    <button onclick="openSettingsModal()" class="text-[10px] font-bold text-blue-400 hover:text-blue-300">LİMİT AYARLA</button>
+                </div>
+                <div id="budget-bars" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="col-span-full text-center text-xs text-zinc-600 italic py-2">Henüz bütçe limiti ayarlanmadı. Ayarlardan ekleyebilirsiniz.</div>
+                </div>
+            </div>
+
+            <!-- 3. HEDEF KUMBARASI -->
+            <div class="bg-zinc-900/80 p-6 rounded-3xl border border-zinc-800 card-shadow">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-zinc-100 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        Hedef Kumbarası
+                    </h3>
+                    <button onclick="openGoalModal()" class="text-[10px] font-bold text-amber-400 hover:text-amber-300 bg-amber-900/20 px-3 py-1.5 rounded-lg border border-amber-900/50 hover:bg-amber-900/40 transition-colors">+ YENİ HEDEF</button>
+                </div>
+                <div id="goals-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- 4. HARCAMA TAKVİMİ -->
+            <div class="bg-zinc-900/80 p-6 rounded-3xl border border-zinc-800 card-shadow">
+                <h3 class="text-lg font-bold text-zinc-100 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Harcama Takvimi (Bu Ay)
+                </h3>
+                <div id="calendar-heatmap" class="grid grid-cols-7 gap-2"></div>
+            </div>
+
+            <!-- 5. BORÇ YÖNETİMİ -->
+            <div class="bg-zinc-900/80 rounded-3xl border border-zinc-800 card-shadow overflow-hidden">
+                <button onclick="toggleSection('debt-horizontal-content', 'debt-horizontal-icon')" class="w-full p-6 flex flex-col md:flex-row justify-between items-center gap-4 hover:bg-zinc-900 transition-all group text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-red-900/20 p-2 rounded-xl text-red-500">
+                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-zinc-100">Borç Yönetimi</h3>
+                    </div>
+                    <div class="flex items-center gap-4 w-full md:w-auto justify-end">
+                        <svg id="debt-horizontal-icon" class="w-5 h-5 text-zinc-500 group-hover:text-white transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </button>
+                <div id="debt-horizontal-content" class="hidden border-t border-zinc-800 p-6 bg-black/20 animate-fade-in">
+                    <div id="debt-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+                    <div class="mt-6 flex justify-end">
+                        <div class="bg-zinc-900/50 px-6 py-4 rounded-2xl border border-zinc-700 flex items-center gap-4">
+                            <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Genel Toplam Yükümlülük</span>
+                            <span class="total-debt-display money-val text-2xl font-black text-rose-500">0.00 ₺</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ana İçerik Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Sol: İşlem Ekle -->
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="bg-zinc-900/80 p-6 rounded-3xl border border-zinc-800 card-shadow h-full">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-bold text-zinc-100 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-theme-main" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Yeni İşlem
+                            </h3>
+                            <button id="voice-btn" onclick="startVoiceRecognition()" class="p-2 rounded-full bg-zinc-800 hover:bg-theme-main hover:text-white text-zinc-400 transition-all border border-zinc-700" title="Sesli Komut: 'Market 500'">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                            </button>
+                        </div>
+                        <form id="transaction-form" class="space-y-4">
+                            <div class="grid grid-cols-3 gap-1 bg-black p-1 rounded-2xl border border-zinc-800">
+                                <button type="button" onclick="setType('income')" id="btn-income" class="py-2.5 rounded-xl text-[10px] font-bold transition-all bg-emerald-900/20 text-emerald-400 border border-emerald-900/50">GELİR</button>
+                                <button type="button" onclick="setType('expense')" id="btn-expense" class="py-2.5 rounded-xl text-[10px] font-bold transition-all text-zinc-500">GİDER</button>
+                                <button type="button" onclick="setType('savings')" id="btn-savings" class="py-2.5 rounded-xl text-[10px] font-bold transition-all text-zinc-500">BİRİKİM</button>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1 ml-1">Kategori</label>
+                                    <select id="category" onchange="checkCategory()" class="w-full p-3.5 bg-black border border-zinc-800 rounded-2xl text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1 ml-1">Miktar (₺)</label>
+                                    <input type="number" id="amount" step="0.01" placeholder="0.00" class="w-full p-3.5 bg-black border border-zinc-800 rounded-2xl text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all font-bold" required>
+                                </div>
+                            </div>
+
+                            <div id="debt-link-container" class="hidden animate-fade-in bg-rose-950/20 p-4 rounded-2xl border border-rose-900/30">
+                                <label class="block text-[10px] font-bold text-rose-500 uppercase mb-1">Düşülecek Borç Hesabı</label>
+                                <select id="debt-link-select" class="w-full p-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-zinc-200 outline-none">
+                                    <option value="Kredi Kartı">Kredi Kartı</option>
+                                    <option value="Kredi">Kredi</option>
+                                    <option value="Elden Borç">Elden Borç</option>
+                                </select>
+                            </div>
+
+                            <div id="goal-link-container" class="hidden animate-fade-in bg-amber-950/20 p-4 rounded-2xl border border-amber-900/30">
+                                <label class="block text-[10px] font-bold text-amber-500 uppercase mb-1">Eklenecek Hedef Kumbarası</label>
+                                <select id="goal-link-select" class="w-full p-2.5 bg-black border border-zinc-800 rounded-xl text-xs text-zinc-200 outline-none"></select>
+                            </div>
+
+                            <input type="text" id="description" placeholder="Açıklama veya notunuz..." class="w-full p-3.5 bg-black border border-zinc-800 rounded-2xl text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+
+                            <div class="flex gap-2">
+                                <button type="button" onclick="openScheduleModal()" class="flex-1 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-2xl transition-all border border-zinc-700 text-xs">OTOMATİK PLANLA</button>
+                                <button type="submit" class="flex-[2] py-4 bg-theme-main hover:bg-emerald-500 text-white font-black rounded-2xl shadow-lg shadow-emerald-900/40 transition-all active:scale-95">KAYDET</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Sağ: Liste -->
+                <div class="lg:col-span-8 space-y-6">
+                    <div class="bg-zinc-900/80 p-4 rounded-3xl border border-zinc-800 card-shadow flex flex-col gap-3">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="relative flex-grow">
+                                <input type="text" id="search-input" oninput="updateUI()" placeholder="İşlem ara..." class="w-full p-3.5 pl-12 bg-black border border-zinc-800 rounded-2xl text-sm text-zinc-200 outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                                <svg class="w-5 h-5 absolute left-4 top-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
+                            <div class="flex gap-2">
+                                <select id="date-filter" onchange="updateUI()" class="p-3.5 bg-black border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-400 outline-none">
+                                    <option value="all">Tüm Zamanlar</option>
+                                    <option value="thisMonth" selected>Bu Ay</option>
+                                    <option value="lastMonth">Geçen Ay</option>
+                                </select>
+                                <select id="sort-type" onchange="updateUI()" class="p-3.5 bg-black border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-400 outline-none">
+                                    <option value="newest">En Yeni</option>
+                                    <option value="amount-high">En Yüksek</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-zinc-900/80 rounded-3xl border border-zinc-800 card-shadow overflow-hidden">
+                        <div class="px-8 py-5 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/90 backdrop-blur-sm sticky top-0 z-10">
+                            <h3 class="text-lg font-bold text-zinc-100">İşlem Geçmişi</h3>
+                            <button onclick="clearAll()" class="text-[10px] font-bold text-rose-500 hover:bg-rose-950/30 px-4 py-2 rounded-xl border border-rose-900/30 transition-all">SIFIRLA</button>
+                        </div>
+                        <div class="max-h-[550px] overflow-y-auto custom-scrollbar">
+                            <table class="w-full text-left">
+                                <thead class="bg-black text-zinc-500 text-[10px] font-bold uppercase sticky top-0 z-10">
+                                    <tr>
+                                        <th class="px-8 py-5">Tarih</th>
+                                        <th class="px-8 py-5">Kategori</th>
+                                        <th class="px-8 py-5">Not</th>
+                                        <th class="px-8 py-5 text-right">Tutar</th>
+                                        <th class="px-8 py-5"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transaction-list" class="divide-y divide-zinc-800"></tbody>
+                            </table>
+                            <div id="empty-state" class="p-20 text-center hidden"><p class="text-zinc-500 text-sm font-medium italic">Kayıtlı işlem bulunmuyor.</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRAFİKLER -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-8 bg-zinc-900/80 p-10 rounded-[2.5rem] border border-zinc-800 card-shadow">
+                    <h3 class="text-xl font-bold text-zinc-100 mb-6 flex items-center gap-3">
+                        <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                        Finansal Görünüm
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="text-[10px] font-bold text-zinc-500 mb-4 uppercase tracking-widest text-center">Dağılım</h4>
+                            <div class="relative w-full h-64"><canvas id="balanceChart"></canvas></div>
+                        </div>
+                        <div>
+                            <h4 class="text-[10px] font-bold text-zinc-500 mb-4 uppercase tracking-widest text-center">6 Aylık Trend</h4>
+                            <div class="relative w-full h-64"><canvas id="trendChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 bg-zinc-900/80 p-10 rounded-[2.5rem] border border-zinc-800 card-shadow flex flex-col justify-center text-center">
+                    <div class="bg-black/50 p-6 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 border border-zinc-800">
+                        <svg class="w-10 h-10 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Aylık Rapor</h3>
+                    <p class="text-xs text-zinc-400 mb-8 leading-relaxed">Seçili tarih aralığındaki verilerinizi PDF olarak indirin.</p>
+                    <button onclick="generatePDF()" class="w-full py-4 bg-theme-main text-white font-black rounded-2xl hover:bg-emerald-500 transition-all shadow-lg flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        RAPORU İNDİR (PDF)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Analizler -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="simulation-gradient p-10 rounded-[2.5rem] card-shadow text-white relative overflow-hidden group">
+                    <h3 class="text-xl font-bold uppercase tracking-widest mb-8 flex items-center gap-3">
+                        <svg class="w-6 h-6 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Akıllı Gelecek Tahmini
+                    </h3>
+                    <div id="simulation-box" class="grid grid-cols-1 sm:grid-cols-3 gap-6 relative z-10"></div>
+                    <div class="absolute -right-12 -bottom-12 text-white/5 group-hover:rotate-12 transition-transform duration-700">
+                        <svg class="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                </div>
+
+                <div class="bg-zinc-900/80 p-10 rounded-[2.5rem] border border-zinc-800 card-shadow">
+                    <h3 class="text-xl font-bold text-zinc-100 mb-8 flex items-center gap-3">
+                        <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Varlıklarım
+                    </h3>
+                    <div id="savings-detail-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                </div>
+            </div>
+
+            <!-- Risk Skoru (HATA DÜZELTİLDİ: BAR EKLENDİ) -->
+            <div id="risk-card" class="rounded-[2.5rem] p-10 text-white card-shadow flex flex-col md:flex-row items-center justify-between gap-10 transition-all duration-700 risk-gradient-yellow">
+                <div class="flex items-center gap-10 flex-grow">
+                    <div class="text-center md:text-left">
+                        <span class="text-[10px] font-bold uppercase tracking-[0.3em] opacity-80 block mb-2">Finansal Sağlık</span>
+                        <div id="risk-score-value" class="text-8xl font-black">--</div>
+                    </div>
+                    <div class="h-24 w-px bg-white/20 hidden md:block"></div>
+                    <div class="max-w-md">
+                        <h4 id="risk-score-label" class="text-3xl font-black mb-3 italic">HESAPLANIYOR</h4>
+                        <p id="risk-suggestion" class="text-sm font-medium opacity-80 leading-relaxed">Veriler analiz ediliyor...</p>
+                    </div>
+                </div>
+                <!-- Eksik Bar Geri Eklendi -->
+                <div class="w-full md:w-32 h-2 md:h-full bg-black/20 rounded-full overflow-hidden relative min-h-[8px] md:min-h-[100px] md:w-2">
+                    <div id="risk-bar" class="absolute bottom-0 left-0 w-full bg-white transition-all duration-1000" style="height: 0%"></div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Simülatör Modalı -->
+    <div id="simulator-modal" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 w-full max-w-lg shadow-2xl animate-fade-in relative">
+            <button onclick="closeSimulatorModal()" class="absolute top-6 right-6 text-zinc-500 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            <h4 class="text-xl font-bold text-zinc-100 mb-6 flex items-center gap-2">
+                <span class="bg-emerald-500/20 text-emerald-500 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></span>
+                Zaman Makinesi
+            </h4>
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-400 mb-2">Aylık Harcamayı Kıs (%) <span id="sim-exp-val" class="text-white">0%</span></label>
+                    <input type="range" id="sim-exp" min="0" max="50" value="0" class="w-full accent-emerald-500" oninput="updateSimulation()">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-400 mb-2">Geliri Artır (%) <span id="sim-inc-val" class="text-white">0%</span></label>
+                    <input type="range" id="sim-inc" min="0" max="50" value="0" class="w-full accent-emerald-500" oninput="updateSimulation()">
+                </div>
+                <div class="bg-black p-4 rounded-xl border border-zinc-800 text-center">
+                    <p class="text-xs text-zinc-500 mb-1">1 Yıl Sonraki Tahmini Bakiye</p>
+                    <div id="sim-result" class="text-3xl font-black text-emerald-400">-- ₺</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debt Modal -->
+    <div id="debt-modal" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 w-full max-w-md shadow-2xl animate-fade-in border border-yellow-900/50">
+            <h4 id="debt-modal-title" class="text-2xl font-black text-zinc-100 mb-2">Borç Tanımla</h4>
+            <input type="number" id="debt-modal-input" placeholder="0.00" class="w-full p-5 bg-black border border-zinc-800 rounded-2xl text-2xl font-black text-zinc-100 outline-none focus:ring-4 focus:ring-yellow-500/20 focus:border-yellow-500 mb-8">
+            <div class="flex gap-4">
+                <button onclick="closeDebtModal()" class="flex-1 py-4 bg-zinc-800 text-zinc-400 font-bold rounded-2xl hover:bg-zinc-700 transition-all">VAZGEÇ</button>
+                <button onclick="saveDebtInitial()" class="flex-1 py-4 bg-theme-main text-white font-black rounded-2xl hover:bg-emerald-500 transition-all">GÜNCELLE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goal Modal -->
+    <div id="goal-modal" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 w-full max-w-md shadow-2xl animate-fade-in border border-amber-900/50 relative">
+            <button onclick="closeGoalModal()" class="absolute top-6 right-6 text-zinc-500 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            <h4 class="text-2xl font-black text-zinc-100 mb-2">Yeni Hedef</h4>
+            <div class="space-y-4 mb-8">
+                <input type="text" id="goal-name" placeholder="Hedef Adı (Örn: Telefon)" class="w-full p-4 bg-black border border-zinc-800 rounded-2xl text-sm text-zinc-100 outline-none focus:border-amber-500">
+                <input type="number" id="goal-target" placeholder="Hedef Tutar (₺)" class="w-full p-4 bg-black border border-zinc-800 rounded-2xl text-sm text-zinc-100 outline-none focus:border-amber-500 font-bold">
+            </div>
+            <button onclick="saveGoal()" class="w-full py-4 bg-amber-500 hover:bg-amber-400 text-black font-black rounded-2xl transition-all">HEDEF OLUŞTUR</button>
+        </div>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div id="schedule-modal" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 w-full max-w-lg shadow-2xl animate-fade-in border border-zinc-800 relative">
+             <button onclick="closeScheduleModal()" class="absolute top-6 right-6 text-zinc-500 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            <h4 class="text-xl font-bold text-zinc-100 mb-4">Otomatik İşlem Planlayıcı</h4>
+            <form id="schedule-form" class="space-y-4 mb-8">
+                <div class="grid grid-cols-2 gap-4">
+                     <select id="sch-type" class="p-3 bg-black border border-zinc-800 rounded-xl text-sm text-zinc-200 outline-none" onchange="updateScheduleCats()">
+                        <option value="income">Gelir</option>
+                        <option value="expense">Gider</option>
+                        <option value="savings">Birikim</option>
+                    </select>
+                    <select id="sch-day" class="p-3 bg-black border border-zinc-800 rounded-xl text-sm text-zinc-200 outline-none"></select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                     <select id="sch-category" class="p-3 bg-black border border-zinc-800 rounded-xl text-sm text-zinc-200 outline-none"></select>
+                     <input type="number" id="sch-amount" placeholder="Tutar" class="p-3 bg-black border border-zinc-800 rounded-xl text-sm text-zinc-200 outline-none font-bold" required>
+                </div>
+                <input type="text" id="sch-desc" placeholder="Açıklama" class="w-full p-3 bg-black border border-zinc-800 rounded-xl text-sm text-zinc-200 outline-none">
+                <button type="submit" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 rounded-xl transition-all">EKLE</button>
+            </form>
+            <h5 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3 border-b border-zinc-800 pb-2">Aktif Planlar</h5>
+            <div id="schedule-list" class="max-h-40 overflow-y-auto space-y-2 custom-scrollbar"></div>
+        </div>
+    </div>
+
+    <!-- Ayarlar Modalı -->
+    <div id="settings-modal" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-8 w-full max-w-lg shadow-2xl animate-fade-in relative">
+            <button onclick="closeSettingsModal()" class="absolute top-6 right-6 text-zinc-500 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            <h4 class="text-xl font-bold text-zinc-100 mb-6">Ayarlar</h4>
+            <div class="mb-8">
+                <h5 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Veri Yönetimi</h5>
+                <div class="flex gap-3">
+                    <button onclick="exportData()" class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl text-sm transition-all border border-zinc-700">İNDİR</button>
+                    <label class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl text-sm transition-all border border-zinc-700 cursor-pointer text-center">
+                        YÜKLE
+                        <input type="file" id="import-file" class="hidden" onchange="importData(this)">
+                    </label>
+                </div>
+            </div>
+            <div>
+                <h5 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Bütçe Limitleri</h5>
+                <div class="space-y-3" id="budget-settings-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        let scheduledTransactions = JSON.parse(localStorage.getItem('scheduledTransactions')) || [];
+        let initialDebts = JSON.parse(localStorage.getItem('initialDebts')) || { 'Kredi Kartı': 0, 'Kredi': 0, 'Elden Borç': 0 };
+        let categoryBudgets = JSON.parse(localStorage.getItem('categoryBudgets')) || {};
+        let savingGoals = JSON.parse(localStorage.getItem('savingGoals')) || [];
+        let privacyMode = false;
+        
+        let currentType = 'income';
+        let activeDebtCategory = null;
+        let balanceChartInstance = null;
+        let trendChartInstance = null;
+
+        const incomeCategories = ["Maaş", "Ek Gelir", "Kira Geliri", "Yatırım", "Hediye", "Diğer"];
+        const expenseCategories = ["Market", "Fatura", "Kira Gideri", "Ulaşım", "Yemek", "Sigara", "Giyim", "Eğlence", "Sağlık", "Borç Ödeme", "Diğer"];
+        const savingsCategories = ["Altın", "Döviz", "Hisse Senedi", "Kripto", "Mevduat", "BES", "Diğer"];
+
+        window.onload = () => {
+            updateDate();
+            updateCategoryUI();
+            initScheduleModal();
+            checkScheduledTransactions();
+            renderBudgetSettings();
+            updateUI();
+        };
+
+        // --- NEW FEATURES ---
+        
+        function togglePrivacy() {
+            privacyMode = !privacyMode;
+            const elements = document.querySelectorAll('.money-val');
+            elements.forEach(el => {
+                if(privacyMode) el.classList.add('privacy-blur');
+                else el.classList.remove('privacy-blur');
+            });
+            document.getElementById('privacy-btn').classList.toggle('text-emerald-400', privacyMode);
+        }
+
+        function startVoiceRecognition() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert("Tarayıcınız sesli komutu desteklemiyor.");
+                return;
+            }
+            const btn = document.getElementById('voice-btn');
+            btn.classList.add('animate-record', 'text-red-500');
+            
+            const recognition = new webkitSpeechRecognition();
+            recognition.lang = 'tr-TR';
+            recognition.onresult = function(event) {
+                const text = event.results[0][0].transcript;
+                processVoiceCommand(text);
+                btn.classList.remove('animate-record', 'text-red-500');
+            };
+            recognition.onerror = function() { btn.classList.remove('animate-record', 'text-red-500'); };
+            recognition.start();
+        }
+
+        function processVoiceCommand(text) {
+            const parts = text.split(' ');
+            const lastPart = parts[parts.length - 1];
+            const amount = parseFloat(lastPart);
+            
+            if (!isNaN(amount)) {
+                const keyword = parts.slice(0, parts.length - 1).join(' ').toLowerCase();
+                let foundCat = "";
+                let foundType = "";
+                
+                incomeCategories.forEach(c => { if(keyword.includes(c.toLowerCase())) { foundCat = c; foundType = 'income'; } });
+                if(!foundCat) expenseCategories.forEach(c => { if(keyword.includes(c.toLowerCase())) { foundCat = c; foundType = 'expense'; } });
+                
+                if (foundCat && foundType) {
+                    setType(foundType);
+                    document.getElementById('category').value = foundCat;
+                    document.getElementById('amount').value = amount;
+                    document.getElementById('description').value = "Sesli Kayıt: " + text;
+                    alert(`Algılandı: ${foundType === 'income' ? 'Gelir' : 'Gider'} - ${foundCat} - ${amount} ₺`);
+                } else {
+                    alert("Kategori anlaşılamadı. Örn: 'Market 500'");
+                }
+            } else {
+                alert("Tutar anlaşılamadı.");
+            }
+        }
+
+        function openSimulatorModal() { 
+            document.getElementById('simulator-modal').classList.remove('hidden'); 
+            updateSimulation();
+        }
+        function closeSimulatorModal() { document.getElementById('simulator-modal').classList.add('hidden'); }
+        
+        function updateSimulation() {
+            const expPercent = document.getElementById('sim-exp').value;
+            const incPercent = document.getElementById('sim-inc').value;
+            document.getElementById('sim-exp-val').innerText = expPercent + "%";
+            document.getElementById('sim-inc-val').innerText = incPercent + "%";
+
+            const currentIncStr = document.getElementById('total-income').innerText.replace(' ₺','').replace(/\./g,'').replace(',','.');
+            const currentExpStr = document.getElementById('total-expense').innerText.replace(' ₺','').replace(/\./g,'').replace(',','.');
+            
+            let monthlyInc = parseFloat(currentIncStr) || 0;
+            let monthlyExp = parseFloat(currentExpStr) || 0;
+
+            const newInc = monthlyInc * (1 + (incPercent / 100));
+            const newExp = monthlyExp * (1 - (expPercent / 100));
+            const monthlyNet = newInc - newExp;
+            
+            const yearlyResult = monthlyNet * 12;
+            document.getElementById('sim-result').innerText = yearlyResult > 0 ? "+" + yearlyResult.toLocaleString('tr-TR') + " ₺" : yearlyResult.toLocaleString('tr-TR') + " ₺";
+        }
+
+        // --- CORE FUNCTIONS ---
+        function updateDate() { document.getElementById('current-date').innerText = new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
+        function saveData() {
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            localStorage.setItem('initialDebts', JSON.stringify(initialDebts));
+            localStorage.setItem('scheduledTransactions', JSON.stringify(scheduledTransactions));
+            localStorage.setItem('categoryBudgets', JSON.stringify(categoryBudgets));
+            localStorage.setItem('savingGoals', JSON.stringify(savingGoals));
+        }
+        function toggleSection(contentId, iconId) {
+            const content = document.getElementById(contentId);
+            const icon = document.getElementById(iconId);
+            const isHidden = content.classList.contains('hidden');
+            if (isHidden) { content.classList.remove('hidden'); if(icon) icon.style.transform = 'rotate(0deg)'; } 
+            else { content.classList.add('hidden'); if(icon) icon.style.transform = 'rotate(180deg)'; }
+        }
+
+        function setType(type) {
+            currentType = type;
+            ['income', 'expense', 'savings'].forEach(t => {
+                const b = document.getElementById(`btn-${t}`);
+                if(t === type) {
+                    let color = t === 'income' ? 'bg-emerald-900/20 text-emerald-400 border-emerald-900/50' 
+                              : t === 'expense' ? 'bg-rose-900/20 text-rose-400 border-rose-900/50' 
+                              : 'bg-amber-900/20 text-amber-400 border-amber-900/50';
+                    b.className = `py-2.5 rounded-xl text-[10px] font-bold transition-all ${color} border`;
+                } else b.className = "py-2.5 rounded-xl text-[10px] font-bold transition-all text-zinc-500 border border-transparent";
+            });
+            updateCategoryUI();
+            checkCategory();
+        }
+
+        function updateCategoryUI() {
+            const select = document.getElementById('category');
+            select.innerHTML = '';
+            const cats = currentType === 'income' ? incomeCategories : (currentType === 'expense' ? expenseCategories : savingsCategories);
+            cats.forEach(cat => { const opt = document.createElement('option'); opt.value = cat; opt.innerText = cat; select.appendChild(opt); });
+        }
+
+        function checkCategory() {
+            const cat = document.getElementById('category').value;
+            document.getElementById('debt-link-container').classList.toggle('hidden', !(currentType === 'expense' && cat === 'Borç Ödeme'));
+            const goalContainer = document.getElementById('goal-link-container');
+            const goalSelect = document.getElementById('goal-link-select');
+            
+            if (currentType === 'savings' && savingGoals.length > 0) {
+                goalContainer.classList.remove('hidden');
+                goalSelect.innerHTML = '<option value="">(Genel Birikim)</option>';
+                savingGoals.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g.id;
+                    opt.innerText = g.name;
+                    goalSelect.appendChild(opt);
+                });
+            } else {
+                goalContainer.classList.add('hidden');
+            }
+        }
+
+        // --- GOALS ---
+        function openGoalModal() { document.getElementById('goal-modal').classList.remove('hidden'); }
+        function closeGoalModal() { document.getElementById('goal-modal').classList.add('hidden'); }
+        function saveGoal() {
+            const name = document.getElementById('goal-name').value;
+            const target = parseFloat(document.getElementById('goal-target').value);
+            if(name && target) {
+                savingGoals.push({ id: Date.now(), name, target, current: 0 });
+                saveData(); updateUI(); closeGoalModal();
+                document.getElementById('goal-name').value = ''; document.getElementById('goal-target').value = '';
+            }
+        }
+        function deleteGoal(id) { if(confirm('Hedef silinsin mi?')) { savingGoals = savingGoals.filter(g => g.id !== id); saveData(); updateUI(); } }
+
+        // --- HEATMAP ---
+        function renderHeatmap() {
+            const container = document.getElementById('calendar-heatmap');
+            container.innerHTML = '';
+            const now = new Date();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const dailySpending = {};
+            transactions.forEach(t => {
+                const tDate = new Date(t.timestamp);
+                if (t.type === 'expense' && tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear()) {
+                    const day = tDate.getDate(); dailySpending[day] = (dailySpending[day] || 0) + t.amount;
+                }
+            });
+            const maxSpend = Math.max(...Object.values(dailySpending), 1);
+            for (let i = 1; i <= daysInMonth; i++) {
+                const spend = dailySpending[i] || 0;
+                let colorClass = 'bg-zinc-800';
+                if (spend > 0) {
+                    const intensity = spend / maxSpend;
+                    if (intensity > 0.7) colorClass = 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]';
+                    else if (intensity > 0.3) colorClass = 'bg-emerald-700';
+                    else colorClass = 'bg-emerald-900';
+                }
+                const dayDiv = document.createElement('div');
+                dayDiv.className = `day-cell h-8 rounded-md ${colorClass} flex items-center justify-center text-[9px] font-bold text-zinc-400 cursor-default relative group`;
+                dayDiv.innerText = i;
+                if (spend > 0) dayDiv.title = `${spend.toLocaleString()} ₺`;
+                container.appendChild(dayDiv);
+            }
+        }
+
+        // --- INSIGHT ---
+        function generateSmartInsight(incTotal, expTotal, savTotal, groups) {
+            const bar = document.getElementById('smart-insight-bar');
+            const txt = document.getElementById('smart-insight-text');
+            bar.classList.remove('hidden');
+            const net = incTotal - expTotal;
+            const burnRate = expTotal / (incTotal || 1); 
+            if (burnRate > 0.9) txt.innerText = "🚨 Alarm: Gelirinin %90'ından fazlasını harcıyorsun.";
+            else if (savTotal === 0 && net > 0) txt.innerText = `💡 Fırsat: ${net.toLocaleString()} ₺ artırdın. Hedef kumbarası oluştur?`;
+            else if (groups['Market'] > expTotal * 0.4) txt.innerText = "🛒 Market harcamaların toplam giderinin %40'ını aşıyor.";
+            else if (net > 2000) txt.innerText = "🚀 Harika! Bu tempoyla 1 yılda ~" + (net*12).toLocaleString() + " ₺ birikebilir.";
+            else txt.innerText = "Harcama verilerin analiz ediliyor...";
+        }
+
+        // --- MODALS & SETTINGS ---
+        function openSettingsModal() { document.getElementById('settings-modal').classList.remove('hidden'); renderBudgetSettings(); }
+        function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
+        function exportData() {
+            const data = { transactions, scheduledTransactions, initialDebts, categoryBudgets, savingGoals };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "artieksi_yedek_" + new Date().toISOString().slice(0,10) + ".json");
+            document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove();
+        }
+        function importData(input) {
+            const file = input.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(data.transactions) transactions = data.transactions;
+                    if(data.scheduledTransactions) scheduledTransactions = data.scheduledTransactions;
+                    if(data.initialDebts) initialDebts = data.initialDebts;
+                    if(data.categoryBudgets) categoryBudgets = data.categoryBudgets;
+                    if(data.savingGoals) savingGoals = data.savingGoals;
+                    saveData(); updateUI(); closeSettingsModal(); alert("Yüklendi!");
+                } catch(err) { alert("Hata!"); }
+            }; reader.readAsText(file);
+        }
+        function renderBudgetSettings() {
+            const list = document.getElementById('budget-settings-list'); list.innerHTML = '';
+            expenseCategories.forEach(cat => { if(cat === 'Borç Ödeme') return; const currentLimit = categoryBudgets[cat] || 0; list.innerHTML += `<div class="flex items-center justify-between gap-2"><span class="text-xs text-zinc-300 w-1/3">${cat}</span><input type="number" value="${currentLimit}" onchange="saveBudget('${cat}', this.value)" class="flex-1 p-2 bg-black border border-zinc-700 rounded-lg text-sm text-right" placeholder="Limit Yok"><span class="text-xs text-zinc-500">₺</span></div>`; });
+        }
+        function saveBudget(cat, val) { const limit = parseFloat(val); if(limit > 0) categoryBudgets[cat] = limit; else delete categoryBudgets[cat]; saveData(); updateUI(); }
+        
+        function openDebtModal(cat) { activeDebtCategory = cat; document.getElementById('debt-modal-title').innerText = cat; document.getElementById('debt-modal-input').value = initialDebts[cat]; document.getElementById('debt-modal').classList.remove('hidden'); }
+        function closeDebtModal() { document.getElementById('debt-modal').classList.add('hidden'); }
+        function saveDebtInitial() { initialDebts[activeDebtCategory] = parseFloat(document.getElementById('debt-modal-input').value) || 0; saveData(); updateUI(); closeDebtModal(); }
+        
+        function initScheduleModal() { const daySelect = document.getElementById('sch-day'); for(let i=1; i<=31; i++) { const opt = document.createElement('option'); opt.value = i; opt.innerText = i + ". Gün"; daySelect.appendChild(opt); } updateScheduleCats(); }
+        function updateScheduleCats() { const type = document.getElementById('sch-type').value; const select = document.getElementById('sch-category'); select.innerHTML = ''; const cats = type === 'income' ? incomeCategories : (type === 'expense' ? expenseCategories : savingsCategories); cats.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.innerText = c; select.appendChild(opt); }); }
+        function openScheduleModal() { document.getElementById('schedule-modal').classList.remove('hidden'); renderScheduleList(); }
+        function closeScheduleModal() { document.getElementById('schedule-modal').classList.add('hidden'); }
+        document.getElementById('schedule-form').addEventListener('submit', (e) => { e.preventDefault(); const type = document.getElementById('sch-type').value; const day = parseInt(document.getElementById('sch-day').value); const category = document.getElementById('sch-category').value; const amount = parseFloat(document.getElementById('sch-amount').value); const desc = document.getElementById('sch-desc').value || (type === 'income' ? 'Otomatik' : 'Otomatik'); scheduledTransactions.push({ id: Date.now(), type, day, category, amount, description: desc, lastProcessedMonth: "" }); saveData(); renderScheduleList(); e.target.reset(); });
+        function renderScheduleList() { const list = document.getElementById('schedule-list'); list.innerHTML = ''; if (scheduledTransactions.length === 0) { list.innerHTML = '<div class="text-xs text-zinc-600 italic">Plan yok.</div>'; return; } scheduledTransactions.forEach(s => { list.innerHTML += `<div class="flex justify-between items-center bg-black p-2 rounded-lg border border-zinc-800 text-xs text-zinc-300"><span>Ayın ${s.day}. günü: ${s.description} (${s.amount}₺)</span><button onclick="deleteSchedule(${s.id})" class="text-red-500 font-bold">X</button></div>`; }); }
+        function deleteSchedule(id) { scheduledTransactions = scheduledTransactions.filter(s => s.id !== id); saveData(); renderScheduleList(); }
+        function checkScheduledTransactions() { const now = new Date(); const currentDay = now.getDate(); const currentMonthStr = now.getFullYear() + "-" + (now.getMonth() + 1); let addedCount = 0; scheduledTransactions.forEach(s => { if (currentDay >= s.day && s.lastProcessedMonth !== currentMonthStr) { const scheduledDate = new Date(now.getFullYear(), now.getMonth(), s.day); transactions.push({ id: Date.now() + Math.random(), type: s.type, amount: s.amount, category: s.category, description: s.description + " (Otomatik)", date: scheduledDate.toLocaleDateString('tr-TR'), timestamp: scheduledDate.getTime(), linkedDebt: null }); s.lastProcessedMonth = currentMonthStr; addedCount++; } }); if (addedCount > 0) { saveData(); updateUI(); const alertBox = document.getElementById('auto-added-alert'); document.getElementById('auto-added-msg').innerText = `${addedCount} işlem eklendi.`; alertBox.classList.remove('hidden'); setTimeout(() => alertBox.classList.add('hidden'), 5000); } }
+
+        // --- MAIN LOGIC ---
+        document.getElementById('transaction-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const category = document.getElementById('category').value;
+            const desc = document.getElementById('description').value || '-';
+            let linkedDebt = (currentType === 'expense' && category === 'Borç Ödeme') ? document.getElementById('debt-link-select').value : null;
+            let linkedGoal = null;
+            if (currentType === 'savings') {
+                const goalSelect = document.getElementById('goal-link-select');
+                if (goalSelect.value) {
+                    linkedGoal = parseFloat(goalSelect.value); 
+                    const goal = savingGoals.find(g => g.id === linkedGoal);
+                    if (goal) goal.current += amount;
+                }
+            }
+            transactions.push({ id: Date.now(), type: currentType, amount, category, description: desc, date: new Date().toLocaleDateString('tr-TR'), timestamp: Date.now(), linkedDebt, linkedGoal });
+            saveData(); updateUI(); e.target.reset(); setType(currentType);
+        });
+
+        function deleteTransaction(id) {
+            const t = transactions.find(x => x.id === id);
+            if (t && t.linkedGoal) {
+                const goal = savingGoals.find(g => g.id === t.linkedGoal);
+                if (goal) goal.current = Math.max(0, goal.current - t.amount);
+            }
+            const row = document.getElementById(`row-${id}`);
+            if(row) { row.classList.add('animate-slide-out'); setTimeout(() => { transactions = transactions.filter(t => t.id !== id); saveData(); updateUI(); }, 400); } 
+            else { transactions = transactions.filter(t => t.id !== id); saveData(); updateUI(); }
+        }
+
+        function clearAll() { if(confirm('Tüm veriler silinecek?')) { localStorage.clear(); location.reload(); } }
+
+        function updateUI() {
+            const list = document.getElementById('transaction-list');
+            const savList = document.getElementById('savings-detail-list');
+            const budgetList = document.getElementById('budget-bars');
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const dateFilter = document.getElementById('date-filter').value;
+            const sortType = document.getElementById('sort-type').value;
+
+            list.innerHTML = ''; savList.innerHTML = ''; 
+            if(budgetList) budgetList.innerHTML = '';
+            
+            let incTotal = 0, expTotal = 0, savTotal = 0, regIncTotal = 0;
+            const expGroups = {}; const savGroups = {};
+            const debtPayments = { 'Kredi Kartı': 0, 'Kredi': 0, 'Elden Borç': 0 };
+            
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            let filteredTransactions = transactions.filter(t => {
+                const tDate = new Date(t.timestamp);
+                let dateMatch = true;
+                if(dateFilter === 'thisMonth') dateMatch = tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear;
+                if(dateFilter === 'lastMonth') {
+                    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    dateMatch = tDate.getMonth() === lastMonthDate.getMonth() && tDate.getFullYear() === lastMonthDate.getFullYear();
+                }
+                const searchMatch = t.category.toLowerCase().includes(search) || t.description.toLowerCase().includes(search);
+                return dateMatch && searchMatch;
+            });
+
+            filteredTransactions.sort((a,b) => {
+                if(sortType === 'oldest') return a.timestamp - b.timestamp;
+                if(sortType === 'amount-high') return b.amount - a.amount;
+                return b.timestamp - a.timestamp;
+            });
+
+            document.getElementById('empty-state').classList.toggle('hidden', filteredTransactions.length > 0);
+
+            filteredTransactions.forEach(t => {
+                if (t.type === 'income') { incTotal += t.amount; if(t.category === 'Maaş') regIncTotal += t.amount; }
+                else if (t.type === 'expense') { 
+                    expTotal += t.amount; 
+                    expGroups[t.category] = (expGroups[t.category] || 0) + t.amount; 
+                    if (t.linkedDebt) debtPayments[t.linkedDebt] += t.amount; 
+                }
+                else if (t.type === 'savings') { savTotal += t.amount; savGroups[t.category] = (savGroups[t.category] || 0) + t.amount; }
+
+                const row = document.createElement('tr'); row.id = `row-${t.id}`; row.className = "hover:bg-zinc-900 group transition-colors animate-fade-in";
+                let c = t.type === 'income' ? 'text-emerald-400' : t.type === 'expense' ? 'text-rose-400' : 'text-amber-400';
+                let amountClass = privacyMode ? "privacy-blur" : "";
+                row.innerHTML = `<td class="px-8 py-5 text-[10px] text-zinc-500 font-bold">${t.date}</td><td class="px-8 py-5"><span class="text-xs font-bold text-zinc-200 block mb-0.5">${t.category}</span><span class="text-[8px] uppercase font-black text-zinc-600">${t.type}</span></td><td class="px-8 py-5 text-xs text-zinc-400 italic">${t.description}</td><td class="px-8 py-5 text-right font-black ${c} ${amountClass} money-val">${t.amount.toLocaleString('tr-TR', {minimumFractionDigits: 2})} ₺</td><td class="px-8 py-5 text-right"><button onclick="deleteTransaction(${t.id})" class="text-zinc-700 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all scale-125">X</button></td>`;
+                list.appendChild(row);
+            });
+
+            document.getElementById('total-income').innerText = incTotal.toLocaleString('tr-TR', {minimumFractionDigits: 2}) + " ₺";
+            document.getElementById('total-expense').innerText = expTotal.toLocaleString('tr-TR', {minimumFractionDigits: 2}) + " ₺";
+            document.getElementById('net-balance').innerText = (incTotal - expTotal - savTotal).toLocaleString('tr-TR', {minimumFractionDigits: 2}) + " ₺";
+            if(privacyMode) document.querySelectorAll('.money-val').forEach(el => el.classList.add('privacy-blur'));
+
+            // Bütçe Barları
+            if(budgetList) {
+                let budgetHtml = "";
+                for (let [cat, limit] of Object.entries(categoryBudgets)) {
+                    const spent = expGroups[cat] || 0;
+                    const perc = Math.min(100, (spent / limit) * 100);
+                    const color = perc > 100 ? 'bg-red-500' : perc > 80 ? 'bg-yellow-500' : 'bg-emerald-500';
+                    budgetHtml += `<div><div class="flex justify-between text-xs mb-1"><span class="font-bold text-zinc-400">${cat}</span><span class="font-bold text-zinc-200">${spent.toLocaleString()} / ${limit.toLocaleString()} ₺</span></div><div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden"><div class="${color} h-full transition-all duration-1000" style="width:${perc}%"></div></div></div>`;
+                }
+                if(budgetHtml === "") budgetList.innerHTML = '<div class="col-span-2 text-center text-xs text-zinc-600 italic">Henüz bütçe limiti ayarlanmadı. Ayarlardan ekleyebilirsiniz.</div>';
+                else budgetList.innerHTML = budgetHtml;
+            }
+
+            // Borç UI
+            let totalRemDebt = 0; const dList = document.getElementById('debt-list'); dList.innerHTML = '';
+            Object.keys(initialDebts).forEach(k => {
+                const rem = Math.max(0, initialDebts[k] - (debtPayments[k] || 0)); 
+                totalRemDebt += rem; const perc = initialDebts[k] > 0 ? ((initialDebts[k]-rem)/initialDebts[k])*100 : 0;
+                dList.innerHTML += `<div class="bg-black p-4 rounded-2xl border border-zinc-800 hover:border-red-900/50 transition-colors"><div class="flex justify-between items-center mb-3"><span class="text-xs font-bold text-zinc-300 uppercase tracking-wider">${k}</span><button onclick="openDebtModal('${k}')" class="text-[10px] font-black text-white bg-red-600 hover:bg-red-500 px-3 py-1.5 rounded transition-colors">GÜNCELLE</button></div><div class="flex justify-between items-end mb-1"><span class="text-xl font-black text-white money-val ${privacyMode ? 'privacy-blur' : ''}">${rem.toLocaleString()} ₺</span><span class="text-[9px] text-zinc-500 font-bold mb-1">/ ${initialDebts[k].toLocaleString()} ₺</span></div><div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden"><div class="bg-red-500 h-full rounded-full transition-all duration-1000" style="width:${Math.min(100, perc)}%"></div></div></div>`;
+            });
+            document.querySelectorAll('.total-debt-display').forEach(el => {
+                el.innerText = totalRemDebt.toLocaleString('tr-TR', {minimumFractionDigits: 2}) + " ₺";
+                if(privacyMode) el.classList.add('privacy-blur');
+            });
+
+            // Hedefler & Varlıklar
+            const gList = document.getElementById('goals-container'); gList.innerHTML = '';
+            if (savingGoals.length === 0) gList.innerHTML = '<div class="col-span-full text-center text-xs text-zinc-600 italic py-4">Henüz hedef eklenmedi.</div>';
+            else {
+                savingGoals.forEach(g => {
+                    const perc = Math.min(100, (g.current / g.target) * 100);
+                    gList.innerHTML += `<div class="bg-black p-4 rounded-2xl border border-zinc-800 relative group hover:border-amber-500/50 transition-colors"><button onclick="deleteGoal(${g.id})" class="absolute top-2 right-2 text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">X</button><div class="text-xs font-bold text-amber-400 uppercase mb-1 tracking-widest">${g.name}</div><div class="flex justify-between text-zinc-200 font-black text-lg mb-2"><span class="money-val ${privacyMode ? 'privacy-blur' : ''}">${g.current.toLocaleString()} ₺</span><span class="text-zinc-600 text-sm self-end">/ ${g.target.toLocaleString()}</span></div><div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden"><div class="bg-amber-500 h-full rounded-full transition-all duration-1000" style="width:${perc}%"></div></div></div>`;
+                });
+            }
+            if (sortedSavings.length === 0) savList.innerHTML = '<div class="text-xs text-zinc-600 italic py-4 col-span-2">Kayıt yok.</div>';
+            else sortedSavings.forEach(cat => { savList.innerHTML += `<div class="flex flex-col p-5 bg-black rounded-2xl border border-zinc-800 hover:border-amber-500/50 transition-colors"><span class="text-[9px] font-bold text-zinc-500 uppercase mb-2 tracking-widest">${cat}</span><span class="text-xl font-black text-amber-500 money-val ${privacyMode ? 'privacy-blur' : ''}">${savGroups[cat].toLocaleString('tr-TR', {minimumFractionDigits: 2})} ₺</span></div>`; });
+
+            generateSmartInsight(incTotal, expTotal, savTotal, expGroups);
+            renderHeatmap();
+            calculateRiskScore(incTotal, expTotal, savTotal, totalRemDebt, regIncTotal);
+            updateCharts(incTotal, expTotal, savTotal);
+        }
+
+        function updateCharts(income, expense, savings) {
+            const ctxBalance = document.getElementById('balanceChart').getContext('2d');
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif"; Chart.defaults.color = '#71717a';
+            if (balanceChartInstance) balanceChartInstance.destroy();
+            if(income > 0 || expense > 0 || savings > 0) {
+                balanceChartInstance = new Chart(ctxBalance, { type: 'doughnut', data: { labels: ['Gelir', 'Gider', 'Birikim'], datasets: [{ data: [income, expense, savings], backgroundColor: ['#10b981', '#f43f5e', '#fbbf24'], borderWidth: 0, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } }, cutout: '70%' } });
+            }
+            const monthlyData = {}; const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+            transactions.forEach(t => { const d = new Date(t.timestamp); const key = months[d.getMonth()]; if(!monthlyData[key]) monthlyData[key] = { inc: 0, exp: 0 }; if(t.type === 'income') monthlyData[key].inc += t.amount; if(t.type === 'expense') monthlyData[key].exp += t.amount; });
+            const labels = []; const dataInc = []; const dataExp = []; const d = new Date();
+            for(let i=5; i>=0; i--) { const past = new Date(d.getFullYear(), d.getMonth() - i, 1); const mName = months[past.getMonth()]; labels.push(mName); if(monthlyData[mName]) { dataInc.push(monthlyData[mName].inc); dataExp.push(monthlyData[mName].exp); } else { dataInc.push(0); dataExp.push(0); } }
+            if (trendChartInstance) trendChartInstance.destroy();
+            trendChartInstance = new Chart(ctxTrend, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Gelir', data: dataInc, backgroundColor: '#10b981', borderRadius: 4 }, { label: 'Gider', data: dataExp, backgroundColor: '#f43f5e', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#27272a', borderDash: [5, 5] }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } }, plugins: { legend: { align: 'end', labels: { usePointStyle: true, boxWidth: 6 } } } } });
+        }
+        function generatePDF() {
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
+            doc.setFillColor(9, 9, 11); doc.rect(0, 0, 210, 297, "F");
+            doc.setTextColor(52, 211, 153); doc.setFontSize(22); doc.text("ArtıEksi Raporu", 14, 20); 
+            doc.setTextColor(161, 161, 170); doc.setFontSize(10); doc.text(`Tarih: ${new Date().toLocaleDateString('tr-TR')}`, 14, 28);
+            const tableData = transactions.map(t => [t.date, t.category, t.type.toUpperCase(), t.amount.toLocaleString('tr-TR') + " ₺", t.description]);
+            doc.autoTable({ head: [['Tarih', 'Kategori', 'Tür', 'Tutar', 'Açıklama']], body: tableData, startY: 35, theme: 'grid', headStyles: { fillColor: [6, 95, 70], textColor: [255, 255, 255] }, bodyStyles: { fillColor: [0, 0, 0], textColor: 255 }, alternateRowStyles: { fillColor: [15, 15, 15] } });
+            doc.save("ArtıEksi_Rapor.pdf");
+        }
+        function calculateRiskScore(inc, exp, sav, debt, reg) {
+            let score = 100; if (inc > 0) { if ((debt/inc) > 3) score -= 40; if (reg/inc < 0.5) score -= 15; } else if (debt > 0) score -= 50; if (sav / (exp || 1) < 3) score -= 20; score = Math.max(0, score);
+            document.getElementById('risk-score-value').innerText = score;
+            const lbl = document.getElementById('risk-score-label'); const suggest = document.getElementById('risk-suggestion'); const card = document.getElementById('risk-card');
+            card.className = "rounded-[2.5rem] p-10 text-white card-shadow flex flex-col md:flex-row items-center justify-between gap-10 transition-all duration-700 " + (score > 75 ? "risk-gradient-green" : score > 45 ? "risk-gradient-yellow" : "risk-gradient-red");
+            lbl.innerText = score > 75 ? "MÜKEMMEL" : score > 45 ? "ORTA RİSK" : "YÜKSEK RİSK";
+            suggest.innerText = score > 75 ? "Finansal sağlığınız çok iyi durumda." : score > 45 ? "Borçlarınızı kontrol altına almalısınız." : "Acil önlem paketi oluşturulmalı.";
+            // Fix: Check element exists before setting
+            const bar = document.getElementById('risk-bar');
+            if(bar) {
+                bar.style.width = `${score}%`;
+                bar.className = `absolute bottom-0 left-0 w-full transition-all duration-1000 ${score > 75 ? 'bg-emerald-500' : score > 45 ? 'bg-amber-500' : 'bg-rose-500'}`;
+                bar.style.height = `${score}%`; // Vertical fill for visual effect
+            }
+        }
+    </script>
+</body>
+</html>
