@@ -8,6 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -23,9 +26,10 @@
                             black: '#000000',
                             card: '#09090b',
                             border: '#27272a',
-                            gold: '#D4AF37', // Gerçek altın rengi
-                            goldLight: '#F3E5AB',
-                            goldDark: '#AA8C2C',
+                            dollar: '#10B981', // Dolar Yeşili (Emerald-500)
+                            dollarDark: '#059669', // Koyu Dolar
+                            income: '#FACC15', // Sarı (Yellow-400)
+                            expense: '#F43F5E', // Kırmızı (Rose-500)
                         }
                     },
                     animation: {
@@ -46,50 +50,99 @@
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #000000;
-            color: #d4d4d8; /* Zinc-300 */
+            background-color: #020202;
+            color: #d4d4d8;
             -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
         }
         
+        /* Kartlar için Genel Çerçeve Stili (KALINLAŞTIRILDI) */
+        .card-border {
+            border: 2px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        /* Arka Plan Dokusu */
+        body::before {
+            content: "";
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                35deg,
+                transparent,
+                transparent 60px,
+                rgba(16, 185, 129, 0.1) 60px,
+                rgba(16, 185, 129, 0.1) 120px
+            );
+            filter: blur(15px);
+            z-index: -1;
+            pointer-events: none;
+            animation: bg-shift 30s linear infinite;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 50% -10%, rgba(16, 185, 129, 0.25), transparent 70%),
+                radial-gradient(circle at 90% 90%, rgba(16, 185, 129, 0.15), transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes bg-shift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-20px, -20px); }
+        }
+
         /* Gizli Scrollbar */
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Premium Glass Effect - Darker & Glossy */
+        /* Premium Glass Effect */
         .glass-premium {
-            background: rgba(20, 20, 20, 0.85);
+            background: rgba(15, 15, 18, 0.75);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(212, 175, 55, 0.15); /* Altın yansıma */
+            border: 2px solid rgba(255, 255, 255, 0.15); /* Menü çerçevesi de 2px oldu */
+            border-top: 2px solid rgba(16, 185, 129, 0.3); /* Üst yeşil yansıma da 2px */
             box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
         }
 
         /* Nav Item Animasyonları */
         .nav-item { position: relative; color: #52525b; transition: all 0.4s ease; }
-        .nav-item.active { color: #D4AF37; } /* Altın rengi */
+        .nav-item.active { color: #10B981; }
         .nav-item.active i {
-            text-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
             transform: translateY(-4px) scale(1.1);
             weight: fill;
         }
         
-        /* Altın Gradient Text */
-        .text-gradient-gold {
-            background: linear-gradient(to right, #D4AF37, #F3E5AB, #D4AF37);
+        /* Dolar Gradient Text */
+        .text-gradient-dollar {
+            background: linear-gradient(to right, #10B981, #6EE7B7, #10B981);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-size: 200% auto;
             animation: shine 5s linear infinite;
         }
 
-        @keyframes shine {
-            to { background-position: 200% center; }
-        }
+        @keyframes shine { to { background-position: 200% center; } }
         
-        /* Switch Toggle Stili - Gold */
-        .toggle-checkbox:checked { right: 0; border-color: #D4AF37; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #D4AF37; }
+        /* Switch Toggle Stili */
+        .toggle-checkbox:checked { right: 0; border-color: #10B981; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #10B981; }
         
+        /* Pie Chart Helper */
+        .pie-chart { border-radius: 50%; position: relative; }
+        .pie-chart::after { content: ""; position: absolute; inset: 15%; background: #121214; border-radius: 50%; }
+
         /* Gecikmeli Animasyonlar */
         .stagger-1 { animation-delay: 50ms; }
         .stagger-2 { animation-delay: 100ms; }
@@ -99,10 +152,10 @@
 
         /* Özel Input Stili */
         select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8) sepia(1) saturate(5) hue-rotate(5deg); opacity: 0.8; }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8) sepia(1) saturate(5) hue-rotate(90deg); opacity: 0.8; }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden selection:bg-luxury-gold/30">
+<body class="h-screen flex flex-col overflow-hidden selection:bg-luxury-dollar/30">
 
     <!-- Üst Bar (Header) -->
     <header class="px-6 py-6 flex justify-between items-end z-30 sticky top-0 bg-gradient-to-b from-black via-black/90 to-transparent">
@@ -110,7 +163,7 @@
             <p class="text-[9px] text-zinc-500 font-bold tracking-[0.2em] uppercase mb-1">Kişisel Finans</p>
             <h1 id="page-title" class="text-3xl font-bold text-white tracking-tight">Cüzdan</h1>
         </div>
-        <div class="w-11 h-11 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center shadow-lg shadow-zinc-900/50 ring-1 ring-white/5">
+        <div class="w-11 h-11 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center shadow-lg shadow-zinc-900/50 ring-1 ring-luxury-dollar/20">
             <i class="ph-fill ph-user text-zinc-400 text-xl"></i>
         </div>
     </header>
@@ -125,27 +178,31 @@
         <!-- Blur Gradient Background -->
         <div class="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black via-black/95 to-transparent pointer-events-none"></div>
         
-        <div class="glass-premium relative mx-4 mb-5 rounded-[2.5rem] flex items-center justify-between px-7 py-5">
-            <button onclick="switchTab('dashboard')" class="nav-item active flex flex-col items-center gap-1" data-tab="dashboard">
+        <div class="glass-premium relative mx-4 mb-5 rounded-[2.5rem] flex items-center justify-between px-6 py-4">
+            <button onclick="switchTab('dashboard')" class="nav-item active flex flex-col items-center gap-1 w-14" data-tab="dashboard">
                 <i class="ph ph-house text-2xl"></i>
+                <span class="text-[10px] font-bold tracking-tight">Cüzdan</span>
             </button>
-            <button onclick="switchTab('wallet')" class="nav-item flex flex-col items-center gap-1" data-tab="wallet">
+            <button onclick="switchTab('wallet')" class="nav-item flex flex-col items-center gap-1 w-14" data-tab="wallet">
                 <i class="ph ph-chart-pie-slice text-2xl"></i>
+                <span class="text-[10px] font-bold tracking-tight">Analiz</span>
             </button>
 
-            <!-- Orta Ekleme Butonu (Altın) -->
-            <div class="relative -top-10 mx-2">
-                <div class="absolute inset-0 bg-luxury-gold rounded-full blur-2xl opacity-20"></div>
-                <button onclick="toggleModal('addTransactionModal')" class="relative w-16 h-16 bg-gradient-to-b from-[#D4AF37] to-[#AA8C2C] text-black rounded-full shadow-2xl shadow-luxury-gold/20 flex items-center justify-center transform transition-all active:scale-90 hover:rotate-90 duration-500 ring-4 ring-black">
-                    <i class="ph-bold ph-plus text-3xl"></i>
+            <!-- Orta Ekleme Butonu (Dolar Yeşili) -->
+            <div class="relative -top-8 mx-1">
+                <div class="absolute inset-0 bg-luxury-dollar rounded-full blur-2xl opacity-20"></div>
+                <button onclick="toggleModal('addTransactionModal')" class="relative w-14 h-14 bg-gradient-to-b from-[#10B981] to-[#059669] text-white rounded-full shadow-2xl shadow-luxury-dollar/30 flex items-center justify-center transform transition-all active:scale-90 hover:rotate-90 duration-500 ring-4 ring-black">
+                    <i class="ph-bold ph-plus text-2xl"></i>
                 </button>
             </div>
 
-            <button onclick="switchTab('debts')" class="nav-item flex flex-col items-center gap-1" data-tab="debts">
+            <button onclick="switchTab('debts')" class="nav-item flex flex-col items-center gap-1 w-14" data-tab="debts">
                 <i class="ph ph-hand-coins text-2xl"></i>
+                <span class="text-[10px] font-bold tracking-tight">Borçlar</span>
             </button>
-            <button onclick="switchTab('settings')" class="nav-item flex flex-col items-center gap-1" data-tab="settings">
+            <button onclick="switchTab('settings')" class="nav-item flex flex-col items-center gap-1 w-14" data-tab="settings">
                 <i class="ph ph-gear text-2xl"></i>
+                <span class="text-[10px] font-bold tracking-tight">Ayarlar</span>
             </button>
         </div>
     </nav>
@@ -153,7 +210,7 @@
     <!-- EKLEME MODALI -->
     <div id="addTransactionModal" class="fixed inset-0 z-50 hidden transition-opacity duration-300">
         <div class="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity" onclick="toggleModal('addTransactionModal')"></div>
-        <div class="absolute bottom-0 w-full bg-[#09090b] rounded-t-[2.5rem] shadow-2xl shadow-black border-t border-zinc-800 transform transition-transform duration-300 translate-y-full flex flex-col max-h-[90vh]" id="modal-panel">
+        <div class="absolute bottom-0 w-full bg-[#09090b] rounded-t-[2.5rem] shadow-2xl shadow-black border-t-2 border-x-2 border-white/15 transform transition-transform duration-300 translate-y-full flex flex-col max-h-[90vh]" id="modal-panel">
             <div class="w-full flex justify-center pt-5 pb-2" onclick="toggleModal('addTransactionModal')">
                 <div class="w-12 h-1 bg-zinc-800 rounded-full"></div>
             </div>
@@ -161,17 +218,17 @@
             <div class="px-6 pb-10 pt-4 overflow-y-auto">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-2xl font-bold text-white">Yeni İşlem</h2>
-                    <button onclick="toggleModal('addTransactionModal')" class="w-9 h-9 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 flex items-center justify-center hover:bg-zinc-800 transition-colors"><i class="ph-bold ph-x"></i></button>
+                    <button onclick="toggleModal('addTransactionModal')" class="w-9 h-9 rounded-full bg-zinc-900 border-2 border-white/10 text-zinc-400 flex items-center justify-center hover:bg-zinc-800 transition-colors"><i class="ph-bold ph-x"></i></button>
                 </div>
                 
                 <form onsubmit="handleAddTransaction(event)" class="space-y-6">
-                    <!-- Switch (Renklendirilmiş & Mat) -->
-                    <div class="flex bg-zinc-900/50 p-1.5 rounded-2xl border border-zinc-800">
-                        <button type="button" onclick="setTxType('income')" id="btn-income" class="flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-emerald-900/80 text-emerald-400 border border-emerald-500/20 shadow-lg">Gelir</button>
+                    <!-- Switch -->
+                    <div class="flex bg-zinc-900/50 p-1.5 rounded-2xl border-2 border-white/15">
+                        <button type="button" onclick="setTxType('income')" id="btn-income" class="flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-luxury-income text-black border border-yellow-500/20 shadow-lg">Gelir</button>
                         <button type="button" onclick="setTxType('expense')" id="btn-expense" class="flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 text-zinc-500 hover:text-white">Gider</button>
                     </div>
 
-                    <div class="bg-black/40 p-6 rounded-3xl border border-zinc-800 focus-within:border-luxury-gold/50 transition-colors">
+                    <div class="bg-black/40 p-6 rounded-3xl border-2 border-white/15 focus-within:border-luxury-dollar/50 transition-colors">
                         <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Tutar</label>
                         <div class="relative flex items-center">
                             <span class="text-3xl text-zinc-600 font-light mr-3">₺</span>
@@ -181,11 +238,11 @@
 
                     <div class="space-y-4">
                         <div>
-                            <input type="text" id="tx-desc" required class="w-full bg-[#121214] border border-zinc-800 rounded-2xl py-4 px-5 font-medium text-white placeholder:text-zinc-600 focus:outline-none focus:border-luxury-gold/50 focus:ring-1 focus:ring-luxury-gold/50 transition-all" placeholder="Açıklama (Örn: Maaş, Prim)">
+                            <input type="text" id="tx-desc" required class="w-full bg-[#121214] border-2 border-white/15 rounded-2xl py-4 px-5 font-medium text-white placeholder:text-zinc-600 focus:outline-none focus:border-luxury-dollar/50 focus:ring-1 focus:ring-luxury-dollar/50 transition-all" placeholder="Açıklama (Örn: Maaş, Prim)">
                         </div>
 
                         <div class="relative">
-                            <select id="tx-category" onchange="checkCategory(this.value)" class="w-full bg-[#121214] border border-zinc-800 rounded-2xl py-4 px-5 font-medium text-white focus:outline-none focus:border-luxury-gold/50 focus:ring-1 focus:ring-luxury-gold/50 transition-all appearance-none">
+                            <select id="tx-category" onchange="checkCategory(this.value)" class="w-full bg-[#121214] border-2 border-white/15 rounded-2xl py-4 px-5 font-medium text-white focus:outline-none focus:border-luxury-dollar/50 focus:ring-1 focus:ring-luxury-dollar/50 transition-all appearance-none">
                                 <option value="Market">🛒 Market / Pazar</option>
                                 <option value="Fatura">📄 Fatura</option>
                                 <option value="Kira">🏠 Kira</option>
@@ -197,7 +254,7 @@
                                 <option value="Sağlık">💊 Sağlık</option>
                                 <option value="Eğlence">🎉 Eğlence</option>
                                 <option value="Maaş">💰 Maaş</option>
-                                <option value="Borç Ödeme" id="opt-debt-payment" class="hidden text-rose-400">💸 Borç Ödeme</option>
+                                <option value="Borç Ödeme" id="opt-debt-payment" class="hidden text-luxury-expense">💸 Borç Ödeme</option>
                                 <option value="Diğer">🔹 Diğer</option>
                             </select>
                             <i class="ph-bold ph-caret-down absolute right-5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"></i>
@@ -205,17 +262,17 @@
                     </div>
 
                     <!-- Borç Seçimi -->
-                    <div id="debt-selector-wrapper" class="hidden animate-fade-in-up bg-rose-950/20 p-4 rounded-2xl border border-rose-900/30">
-                        <label class="block text-[10px] font-bold text-rose-400 mb-2 uppercase tracking-wide">Hangi Borç?</label>
+                    <div id="debt-selector-wrapper" class="hidden animate-fade-in-up bg-rose-950/20 p-4 rounded-2xl border-2 border-rose-500/30">
+                        <label class="block text-[10px] font-bold text-luxury-expense mb-2 uppercase tracking-wide">Hangi Borç?</label>
                         <div class="relative">
-                            <select id="tx-debt-select" class="w-full bg-[#18181b] border border-rose-900/30 rounded-xl py-3 px-4 focus:outline-none text-sm text-rose-100 font-medium">
+                            <select id="tx-debt-select" class="w-full bg-[#18181b] border-2 border-rose-900/30 rounded-xl py-3 px-4 focus:outline-none text-sm text-rose-100 font-medium">
                                 <option value="">Seçiniz...</option>
                             </select>
-                            <i class="ph-bold ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-rose-400 pointer-events-none"></i>
+                            <i class="ph-bold ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-luxury-expense pointer-events-none"></i>
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-gradient-to-r from-[#D4AF37] to-[#AA8C2C] text-black font-bold py-4 rounded-2xl shadow-lg shadow-luxury-gold/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-lg hover:brightness-110">
+                    <button type="submit" class="w-full bg-gradient-to-r from-[#10B981] to-[#059669] text-white font-bold py-4 rounded-2xl shadow-lg shadow-luxury-dollar/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-lg hover:brightness-110">
                         Kaydet
                     </button>
                 </form>
@@ -226,35 +283,31 @@
     <!-- FİLTRELEME MODALI -->
     <div id="filterModal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/90 backdrop-blur-xl" onclick="toggleModal('filterModal')"></div>
-        <div class="absolute bottom-0 w-full bg-[#09090b] rounded-t-[2rem] p-6 shadow-2xl border-t border-zinc-800 transform transition-transform duration-300 translate-y-full" id="filter-modal-panel">
+        <div class="absolute bottom-0 w-full bg-[#09090b] rounded-t-[2rem] p-6 shadow-2xl border-t-2 border-x-2 border-white/15 transform transition-transform duration-300 translate-y-full" id="filter-modal-panel">
             <div class="w-10 h-1 bg-zinc-800 rounded-full mx-auto mb-6"></div>
-            
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-xl font-bold text-white">Filtrele</h2>
-                <button onclick="clearFilters()" class="text-xs text-rose-400 font-bold hover:text-rose-300 transition-colors uppercase tracking-wider">Temizle</button>
+                <button onclick="clearFilters()" class="text-xs text-luxury-expense font-bold hover:text-rose-400 transition-colors uppercase tracking-wider">Temizle</button>
             </div>
-            
             <div class="space-y-6">
                 <div>
                     <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-3">Tür</label>
-                    <div class="flex bg-zinc-900 p-1.5 rounded-2xl border border-zinc-800">
+                    <div class="flex bg-zinc-900 p-1.5 rounded-2xl border-2 border-white/15">
                         <button onclick="setFilterType('all')" id="f-btn-all" class="flex-1 py-2.5 rounded-xl text-sm font-bold bg-[#27272a] text-white shadow-sm transition-all border border-zinc-700">Tümü</button>
                         <button onclick="setFilterType('income')" id="f-btn-income" class="flex-1 py-2.5 rounded-xl text-sm font-bold text-zinc-500 transition-all">Gelir</button>
                         <button onclick="setFilterType('expense')" id="f-btn-expense" class="flex-1 py-2.5 rounded-xl text-sm font-bold text-zinc-500 transition-all">Gider</button>
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-3">Min. Tutar</label>
                     <div class="relative">
                         <i class="ph-bold ph-money absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500 text-lg"></i>
-                        <input type="number" id="f-min-amount" class="w-full bg-[#121214] border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-luxury-gold/50 text-white font-semibold placeholder:text-zinc-700" placeholder="0.00">
+                        <input type="number" id="f-min-amount" class="w-full bg-[#121214] border-2 border-white/15 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-luxury-dollar/50 text-white font-semibold placeholder:text-zinc-700" placeholder="0.00">
                     </div>
                 </div>
-
-                <label class="flex items-center justify-between p-4 bg-[#121214] rounded-2xl border border-zinc-800 cursor-pointer hover:border-zinc-700 transition-colors">
+                <label class="flex items-center justify-between p-4 bg-[#121214] rounded-2xl border-2 border-white/15 cursor-pointer hover:border-white/30 transition-colors">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-luxury-gold/10 text-luxury-gold flex items-center justify-center">
+                        <div class="w-10 h-10 rounded-full bg-luxury-dollar/10 text-luxury-dollar flex items-center justify-center">
                             <i class="ph-fill ph-calendar-check text-xl"></i>
                         </div>
                         <span class="text-sm font-bold text-zinc-300">Sadece Bu Ay</span>
@@ -264,29 +317,25 @@
                         <label for="f-this-month" class="toggle-label block overflow-hidden h-6 rounded-full bg-zinc-800 cursor-pointer transition-colors"></label>
                     </div>
                 </label>
-
-                <button onclick="applyFilters()" class="w-full bg-white text-black font-bold py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-transform text-lg">
-                    Uygula
-                </button>
+                <button onclick="applyFilters()" class="w-full bg-white text-black font-bold py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-transform text-lg">Uygula</button>
             </div>
         </div>
     </div>
 
-    <!-- BORÇ EKLEME MODALI -->
+    <!-- BORÇ MODALI -->
     <div id="addDebtModal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/90 backdrop-blur-xl" onclick="toggleModal('addDebtModal')"></div>
-        <div class="absolute bottom-0 w-full bg-[#09090b] rounded-t-[2rem] p-6 shadow-2xl border-t border-zinc-800 transform transition-transform duration-300 translate-y-full" id="debt-modal-panel">
+        <div class="absolute bottom-0 w-full bg-[#09090b] rounded-t-[2rem] p-6 shadow-2xl border-t-2 border-x-2 border-white/15 transform transition-transform duration-300 translate-y-full" id="debt-modal-panel">
             <div class="w-10 h-1 bg-zinc-800 rounded-full mx-auto mb-6"></div>
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold text-white">Borç Ekle</h2>
                 <button onclick="toggleModal('addDebtModal')" class="p-2 bg-zinc-800 rounded-full text-zinc-400 hover:bg-zinc-700"><i class="ph-bold ph-x"></i></button>
             </div>
-            
             <form onsubmit="handleAddDebt(event)" class="space-y-5">
                 <div>
                     <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2">Tür</label>
                     <div class="relative">
-                        <select id="debt-category" class="w-full bg-[#121214] border border-zinc-800 rounded-2xl py-4 px-5 font-medium text-white focus:outline-none focus:border-luxury-gold/50 transition-all">
+                        <select id="debt-category" class="w-full bg-[#121214] border-2 border-white/15 rounded-2xl py-4 px-5 font-medium text-white focus:outline-none focus:border-luxury-dollar/50 transition-all">
                             <option value="Kredi Kartı">💳 Kredi Kartı</option>
                             <option value="Kredi">bank Kredi</option>
                             <option value="Elden Borç">🤝 Elden Borç</option>
@@ -294,27 +343,40 @@
                         <i class="ph-bold ph-caret-down absolute right-5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"></i>
                     </div>
                 </div>
+                <div><label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2">Açıklama</label><input type="text" id="debt-name" required class="w-full bg-[#121214] border-2 border-white/15 rounded-2xl py-4 px-5 font-medium text-white focus:outline-none focus:border-luxury-dollar/50 transition-all" placeholder="Örn: Bonus Kart"></div>
+                <div class="bg-[#121214] p-4 rounded-2xl border-2 border-white/15"><label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2">Tutar</label><div class="relative flex items-center"><span class="text-2xl text-zinc-500 font-medium mr-2">₺</span><input type="number" id="debt-amount" required class="w-full bg-transparent text-3xl font-bold text-white focus:outline-none placeholder:text-zinc-700" placeholder="0"></div></div>
+                <div><label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2">Son Ödeme</label><input type="date" id="debt-date" class="w-full bg-[#121214] border-2 border-white/15 rounded-2xl py-4 px-5 font-medium text-white focus:outline-none focus:border-luxury-dollar/50 transition-all"></div>
+                <button type="submit" class="w-full bg-white text-black font-bold py-4 rounded-2xl shadow-xl active:scale-[0.98] transition-transform text-lg">Kaydet</button>
+            </form>
+        </div>
+    </div>
 
+    <!-- HEDEF EKLEME MODALI -->
+    <div id="addGoalModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-xl" onclick="toggleModal('addGoalModal')"></div>
+        <div class="absolute bottom-0 w-full bg-[#09090b] rounded-t-[2rem] p-6 shadow-2xl border-t-2 border-x-2 border-white/15 transform transition-transform duration-300 translate-y-full" id="goal-modal-panel">
+            <div class="w-10 h-1 bg-zinc-800 rounded-full mx-auto mb-6"></div>
+            <h2 class="text-xl font-bold text-white mb-6">Yeni Hedef Ekle</h2>
+            
+            <form onsubmit="handleAddGoal(event)" class="space-y-5">
                 <div>
-                    <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2">Açıklama</label>
-                    <input type="text" id="debt-name" required class="w-full bg-[#121214] border border-zinc-800 rounded-2xl py-4 px-5 font-medium text-white focus:outline-none focus:border-luxury-gold/50 transition-all" placeholder="Örn: Bonus Kart">
+                    <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2">Hedef Adı</label>
+                    <input type="text" id="goal-name" required class="w-full bg-[#121214] border-2 border-white/15 rounded-2xl py-4 px-5 font-medium text-white focus:outline-none focus:border-luxury-dollar/50 transition-all" placeholder="Örn: Yeni Telefon, Tatil">
                 </div>
-
-                <div class="bg-[#121214] p-4 rounded-2xl border border-zinc-800">
-                    <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2">Tutar</label>
-                    <div class="relative flex items-center">
-                        <span class="text-2xl text-zinc-500 font-medium mr-2">₺</span>
-                        <input type="number" id="debt-amount" required class="w-full bg-transparent text-3xl font-bold text-white focus:outline-none placeholder:text-zinc-700" placeholder="0">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2">Hedef Tutar</label>
+                        <input type="number" id="goal-target" required class="w-full bg-[#121214] border-2 border-white/15 rounded-2xl py-4 px-5 font-medium text-white focus:outline-none focus:border-luxury-dollar/50" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2">Şu Anki</label>
+                        <input type="number" id="goal-current" class="w-full bg-[#121214] border-2 border-white/15 rounded-2xl py-4 px-5 font-medium text-white focus:outline-none focus:border-luxury-dollar/50" placeholder="0">
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2">Son Ödeme</label>
-                    <input type="date" id="debt-date" class="w-full bg-[#121214] border border-zinc-800 rounded-2xl py-4 px-5 font-medium text-white focus:outline-none focus:border-luxury-gold/50 transition-all">
-                </div>
-
                 <button type="submit" class="w-full bg-white text-black font-bold py-4 rounded-2xl shadow-xl active:scale-[0.98] transition-transform text-lg">
-                    Kaydet
+                    Hedef Oluştur
                 </button>
             </form>
         </div>
@@ -323,18 +385,36 @@
     <script>
         // --- VERİ YÖNETİMİ ---
         const APP_DATA_KEY = 'finans_app_data_v1';
-        let appData = JSON.parse(localStorage.getItem(APP_DATA_KEY)) || { transactions: [], debts: [], balance: 0 };
-        if(appData.debts) { appData.debts = appData.debts.map(d => ({ ...d, type: d.type || 'debt', category: d.category || 'Elden Borç', id: d.id || Date.now() + Math.random() })); }
+        let appData = JSON.parse(localStorage.getItem(APP_DATA_KEY)) || { 
+            user: { name: 'Kullanıcı', type: 'Premium' }, 
+            transactions: [], 
+            debts: [], 
+            goals: [], 
+            settings: { privacyMode: false }, 
+            balance: 0 
+        };
+        
+        if(appData.debts) appData.debts = appData.debts.map(d => ({ ...d, type: d.type || 'debt', category: d.category || 'Elden Borç', id: d.id || Date.now() + Math.random() }));
+        if(!appData.goals) appData.goals = [];
+        if(!appData.user) appData.user = { name: 'Kullanıcı', type: 'Premium' };
+        if(!appData.settings) appData.settings = { privacyMode: false };
+        
         function saveData() { localStorage.setItem(APP_DATA_KEY, JSON.stringify(appData)); updateUI(); }
 
         // --- GLOBAL ---
         let currentTxType = 'expense';
-        let isBalanceVisible = false;
+        let isBalanceVisible = !appData.settings.privacyMode;
         let activeSort = 'newest';
         let activeFilters = { type: 'all', minAmount: '', thisMonth: false };
 
         // --- HELPER FUNC ---
-        function toggleBalance(e) { e.preventDefault(); e.stopPropagation(); isBalanceVisible = !isBalanceVisible; renderTab('dashboard'); }
+        function toggleBalance(e) { 
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            isBalanceVisible = !isBalanceVisible; 
+            renderTab('dashboard'); 
+        }
+
         function toggleModal(modalId) {
             const modal = document.getElementById(modalId);
             const panel = modal.querySelector('div[id$="panel"]');
@@ -342,7 +422,6 @@
                 modal.classList.remove('hidden');
                 setTimeout(() => { panel.style.transform = 'translateY(0)'; }, 10);
                 if(modalId === 'addTransactionModal') { 
-                    // Varsayılan olarak GELİR (Income) seç
                     setTxType('income'); 
                     document.getElementById('tx-category').value = 'Maaş'; 
                     document.getElementById('debt-selector-wrapper').classList.add('hidden'); 
@@ -356,6 +435,14 @@
             const icons = { 'Market': 'ph-shopping-cart', 'Fatura': 'ph-receipt', 'Kira': 'ph-house-line', 'Ulaşım': 'ph-bus', 'Yemek': 'ph-hamburger', 'Sigara': 'ph-cigarette', 'Eğitim': 'ph-books', 'Giyim': 'ph-t-shirt', 'Sağlık': 'ph-first-aid', 'Eğlence': 'ph-confetti', 'Maaş': 'ph-money', 'Borç Ödeme': 'ph-hand-coins', 'Diğer': 'ph-dots-three-circle' };
             return icons[cat] || 'ph-circle';
         }
+        function getCategoryColor(cat) {
+            const colors = { 
+                'Market': '#fbbf24', 'Fatura': '#fcd34d', 'Kira': '#f59e0b', 'Ulaşım': '#f87171', 
+                'Yemek': '#fb923c', 'Sigara': '#9ca3af', 'Eğitim': '#fbbf24', 'Giyim': '#fca5a5', 
+                'Sağlık': '#fca5a5', 'Eğlence': '#fbbf24', 'Maaş': '#facc15', 'Borç Ödeme': '#ef4444', 'Diğer': '#94a3b8' 
+            };
+            return colors[cat] || '#94a3b8';
+        }
         function setSort(sortType) { activeSort = sortType; renderDashboard(document.getElementById('main-content')); }
         function setFilterType(type) {
             activeFilters.type = type;
@@ -367,7 +454,16 @@
         }
         function clearFilters() { activeFilters = { type: 'all', minAmount: '', thisMonth: false }; document.getElementById('f-min-amount').value = ''; document.getElementById('f-this-month').checked = false; setFilterType('all'); toggleModal('filterModal'); renderDashboard(document.getElementById('main-content')); }
         function applyFilters() { activeFilters.minAmount = document.getElementById('f-min-amount').value ? parseFloat(document.getElementById('f-min-amount').value) : ''; activeFilters.thisMonth = document.getElementById('f-this-month').checked; toggleModal('filterModal'); renderDashboard(document.getElementById('main-content')); }
-        function updateUI() { const activeTabBtn = document.querySelector('.nav-item.active'); if(activeTabBtn) { renderTab(activeTabBtn.getAttribute('data-tab')); } }
+
+        function updateUI() { 
+            const activeTabBtn = document.querySelector('.nav-item.active'); 
+            if(activeTabBtn) { renderTab(activeTabBtn.getAttribute('data-tab')); } 
+            
+            // Header ismini güncelle (SADELEŞTİRİLDİ)
+            const headerName = document.querySelector('header p');
+            if(headerName) headerName.innerText = 'Hoş Geldin';
+        }
+
         function switchTab(tabName) {
             document.querySelectorAll('.nav-item').forEach(btn => {
                 btn.classList.remove('active', 'text-white');
@@ -379,51 +475,125 @@
             renderTab(tabName);
         }
 
+        // --- EXPORT/IMPORT Functions ---
+        async function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(20); doc.text("Finans Raporu", 14, 22);
+            doc.setFontSize(11); doc.setTextColor(100); doc.text(`Olusturulma: ${new Date().toLocaleDateString('tr-TR')}`, 14, 30);
+            const headers = [["Tarih", "Tur", "Kategori", "Aciklama", "Tutar"]];
+            const data = appData.transactions.map(t => [ t.date, t.type === 'income' ? 'Gelir' : 'Gider', t.category, t.desc, t.amount.toLocaleString('tr-TR') + ' TL' ]);
+            doc.autoTable({ head: headers, body: data, startY: 40, theme: 'grid', styles: { fontSize: 10, cellPadding: 3 }, headStyles: { fillColor: [20, 20, 20], textColor: [255, 255, 255] } });
+            doc.save("Finans_Raporu.pdf");
+        }
+
+        function exportCSV() {
+            const rows = [['Tarih', 'Tür', 'Kategori', 'Açıklama', 'Tutar']];
+            appData.transactions.forEach(t => rows.push([t.date, t.type, t.category, t.desc, t.amount]));
+            const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+            const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", "finans_islemler.csv");
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        function backupJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
+            const link = document.createElement("a"); link.setAttribute("href", dataStr); link.setAttribute("download", "finans_yedek.json");
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        function triggerImport() { document.getElementById('import-file').click(); }
+
+        function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const loadedData = JSON.parse(e.target.result);
+                    if (confirm('Mevcut veriler silinip yedek yüklenecek. Onaylıyor musun?')) {
+                        appData = loadedData;
+                        saveData();
+                        alert('Yedek başarıyla yüklendi!');
+                        renderTab('settings');
+                    }
+                } catch (err) {
+                    alert('Geçersiz dosya formatı!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function editProfileName() {
+            const newName = prompt("Yeni isminiz:", appData.user.name);
+            if (newName && newName.trim() !== "") {
+                appData.user.name = newName.trim();
+                saveData();
+            }
+        }
+
+        function togglePrivacyMode() {
+            appData.settings.privacyMode = !appData.settings.privacyMode;
+            saveData();
+            isBalanceVisible = !appData.settings.privacyMode;
+            renderTab('settings');
+        }
+
         // --- RENDER ---
         function renderTab(tabName) {
             const main = document.getElementById('main-content');
             const title = document.getElementById('page-title');
+            
+            // Header Güncelleme (SADELEŞTİRİLDİ)
+            const headerDiv = document.querySelector('header div');
+            headerDiv.innerHTML = `
+                <p class="text-[9px] text-zinc-500 font-bold tracking-[0.2em] uppercase mb-1">Hoş Geldin</p>
+                <h1 id="page-title" class="text-3xl font-bold text-white tracking-tight">Cüzdan</h1>
+            `;
+
             main.innerHTML = '';
             if (tabName === 'dashboard') {
-                title.innerHTML = `<span class="flex items-center gap-2 text-gradient-gold"><i class="ph-fill ph-wallet text-luxury-gold"></i> Cüzdan</span>`;
+                document.getElementById('page-title').innerHTML = `<span class="flex items-center gap-2 text-gradient-dollar"><i class="ph-fill ph-wallet text-luxury-dollar"></i> Cüzdan</span>`;
                 renderDashboard(main);
-            } else if (tabName === 'wallet') { title.innerText = 'Finansal Analiz'; renderWallet(main); }
-            else if (tabName === 'debts') { title.innerText = 'Borç Yönetimi'; renderDebts(main); }
-            else if (tabName === 'settings') { title.innerText = 'Ayarlar'; renderSettings(main); }
+            } else if (tabName === 'wallet') { 
+                document.getElementById('page-title').innerText = 'Finansal Analiz'; 
+                renderWallet(main); 
+            } else if (tabName === 'debts') { 
+                document.getElementById('page-title').innerText = 'Borç Yönetimi'; 
+                renderDebts(main); 
+            } else if (tabName === 'settings') { 
+                document.getElementById('page-title').innerText = 'Ayarlar'; 
+                renderSettings(main); 
+            }
         }
 
         function renderDashboard(container) {
+            // ... (unchanged variables)
             const totalIncome = appData.transactions.filter(t => t.type === 'income').reduce((acc, c) => acc + c.amount, 0);
             const totalExpense = appData.transactions.filter(t => t.type === 'expense').reduce((acc, c) => acc + c.amount, 0);
             const balance = totalIncome - totalExpense;
             const balanceText = isBalanceVisible ? `₺${balance.toLocaleString('tr-TR', {minimumFractionDigits: 2})}` : '₺******';
             const eyeIcon = isBalanceVisible ? 'ph-eye' : 'ph-eye-slash';
-
             let displayedTransactions = [...appData.transactions];
             if (activeFilters.type !== 'all') displayedTransactions = displayedTransactions.filter(t => t.type === activeFilters.type);
             if (activeFilters.minAmount !== '') displayedTransactions = displayedTransactions.filter(t => t.amount >= activeFilters.minAmount);
             if (activeFilters.thisMonth) {
                 const now = new Date();
-                displayedTransactions = displayedTransactions.filter(t => {
-                    const parts = t.date.split('.');
-                    return parseInt(parts[1]) === (now.getMonth() + 1) && parseInt(parts[2]) === now.getFullYear();
-                });
+                displayedTransactions = displayedTransactions.filter(t => { const parts = t.date.split('.'); return parseInt(parts[1]) === (now.getMonth() + 1) && parseInt(parts[2]) === now.getFullYear(); });
             }
             if (activeSort === 'newest') displayedTransactions.sort((a, b) => b.id - a.id);
             else if (activeSort === 'oldest') displayedTransactions.sort((a, b) => a.id - b.id);
             else if (activeSort === 'highest') displayedTransactions.sort((a, b) => b.amount - a.amount);
             else if (activeSort === 'lowest') displayedTransactions.sort((a, b) => a.amount - b.amount);
-
             const isFilterActive = activeFilters.type !== 'all' || activeFilters.minAmount !== '' || activeFilters.thisMonth;
-            const filterSummary = isFilterActive ? `<div class="mb-4 animate-fade-in-up"><span class="bg-luxury-gold/10 text-luxury-gold px-3 py-1.5 rounded-full text-xs font-bold border border-luxury-gold/20 flex items-center gap-1 w-fit"><i class="ph-bold ph-funnel"></i> Filtre Aktif: ${displayedTransactions.length}</span></div>` : '';
+            const filterSummary = isFilterActive ? `<div class="mb-4 animate-fade-in-up"><span class="bg-luxury-dollar/10 text-luxury-dollar px-3 py-1.5 rounded-full text-xs font-bold border border-luxury-dollar/20 flex items-center gap-1 w-fit"><i class="ph-bold ph-funnel"></i> Filtre Aktif: ${displayedTransactions.length}</span></div>` : '';
             const txList = displayedTransactions.slice(0, 10);
 
             container.innerHTML = `
                 <details class="group mb-8 animate-fade-in-up">
-                    <summary class="flex justify-between items-center p-6 bg-gradient-to-br from-zinc-900 to-black rounded-[2rem] border border-zinc-800 cursor-pointer select-none hover:border-zinc-700 transition-colors shadow-lg">
+                    <summary class="flex justify-between items-center p-6 bg-gradient-to-br from-zinc-900 to-black rounded-[2rem] border-2 border-white/15 cursor-pointer select-none hover:border-zinc-700 transition-colors shadow-lg card-border">
                         <div class="flex items-center gap-5">
                             <div class="bg-zinc-800/50 w-14 h-14 rounded-2xl flex items-center justify-center border border-zinc-700/50">
-                                <i class="ph-fill ph-wallet text-2xl text-luxury-gold"></i>
+                                <i class="ph-fill ph-wallet text-2xl text-luxury-dollar"></i>
                             </div>
                             <div>
                                 <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.15em] mb-1.5">Toplam Varlık</p>
@@ -433,25 +603,25 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="bg-zinc-900 p-3 rounded-full text-zinc-500 group-hover:text-luxury-gold transition-all border border-zinc-800">
+                        <div class="bg-zinc-900 p-3 rounded-full text-zinc-500 group-hover:text-luxury-dollar transition-all border border-zinc-800">
                             <i class="ph-bold ph-caret-down transition-transform duration-300 group-open:rotate-180 text-lg"></i>
                         </div>
                     </summary>
                     <div class="pt-4 animate-fade-in-up">
-                        <div class="bg-[#0c0c0e] border border-zinc-800/80 p-6 rounded-[2rem] relative overflow-hidden">
-                            <div class="absolute top-0 right-0 w-64 h-64 bg-luxury-gold/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+                        <div class="bg-[#0c0c0e] border-2 border-white/15 p-6 rounded-[2rem] relative overflow-hidden card-border">
+                            <div class="absolute top-0 right-0 w-64 h-64 bg-luxury-dollar/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
                             <div class="relative z-10 grid grid-cols-3 gap-3">
-                                <div class="bg-zinc-900/30 p-4 rounded-2xl border border-white/5 flex flex-col justify-between h-[90px]">
-                                    <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-wide">Gelir</span>
-                                    <p class="font-bold text-lg text-emerald-400">₺${totalIncome.toLocaleString('tr-TR')}</p>
+                                <div class="bg-zinc-900/30 p-4 rounded-2xl border-2 border-white/15 flex flex-col justify-between h-[90px]">
+                                    <span class="text-[10px] font-bold text-luxury-income uppercase tracking-wide">Gelir</span>
+                                    <p class="font-bold text-lg text-luxury-income">₺${totalIncome.toLocaleString('tr-TR')}</p>
                                 </div>
-                                <div class="bg-zinc-900/30 p-4 rounded-2xl border border-white/5 flex flex-col justify-between h-[90px]">
-                                    <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wide">Gider</span>
-                                    <p class="font-bold text-lg text-rose-400">₺${totalExpense.toLocaleString('tr-TR')}</p>
+                                <div class="bg-zinc-900/30 p-4 rounded-2xl border-2 border-white/15 flex flex-col justify-between h-[90px]">
+                                    <span class="text-[10px] font-bold text-luxury-expense uppercase tracking-wide">Gider</span>
+                                    <p class="font-bold text-lg text-luxury-expense">₺${totalExpense.toLocaleString('tr-TR')}</p>
                                 </div>
-                                <div class="bg-zinc-900/30 p-4 rounded-2xl border border-white/5 flex flex-col justify-between h-[90px]">
-                                    <span class="text-[10px] font-bold text-luxury-gold uppercase tracking-wide">Net</span>
-                                    <p class="font-bold text-lg text-luxury-gold">₺${balance.toLocaleString('tr-TR')}</p>
+                                <div class="bg-zinc-900/30 p-4 rounded-2xl border-2 border-white/15 flex flex-col justify-between h-[90px]">
+                                    <span class="text-[10px] font-bold text-luxury-dollar uppercase tracking-wide">Net</span>
+                                    <p class="font-bold text-lg text-luxury-dollar">₺${balance.toLocaleString('tr-TR')}</p>
                                 </div>
                             </div>
                         </div>
@@ -464,8 +634,8 @@
                         <p class="text-xs text-zinc-500 font-medium mt-0.5">Harcama hareketleri</p>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="toggleModal('filterModal')" class="w-10 h-10 rounded-xl bg-[#121214] border border-zinc-800 text-zinc-400 flex items-center justify-center hover:bg-zinc-800 hover:text-white transition-all ${isFilterActive ? 'text-luxury-gold border-luxury-gold/30' : ''}"><i class="ph-bold ph-funnel text-lg"></i></button>
-                        <button onclick="switchTab('wallet')" class="px-4 h-10 rounded-xl bg-zinc-900 text-zinc-300 border border-zinc-800 text-xs font-bold flex items-center hover:bg-zinc-800 hover:text-white transition-colors">Tümünü Gör</button>
+                        <button onclick="toggleModal('filterModal')" class="w-10 h-10 rounded-xl bg-[#121214] border-2 border-white/15 text-zinc-400 flex items-center justify-center hover:bg-zinc-800 hover:text-white transition-all ${isFilterActive ? 'text-luxury-dollar border-luxury-dollar/30' : ''}"><i class="ph-bold ph-funnel text-lg"></i></button>
+                        <button onclick="switchTab('wallet')" class="px-4 h-10 rounded-xl bg-zinc-900 text-zinc-300 border-2 border-white/15 text-xs font-bold flex items-center hover:bg-zinc-800 hover:text-white transition-colors">Tümünü Gör</button>
                     </div>
                 </div>
                 ${filterSummary}
@@ -473,16 +643,16 @@
                     ${['En Yeni', 'En Yüksek', 'En Düşük', 'En Eski'].map((l, i) => {
                         const keys = ['newest', 'highest', 'lowest', 'oldest'];
                         const active = activeSort === keys[i];
-                        return `<button onclick="setSort('${keys[i]}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${active ? 'bg-luxury-gold text-black border-luxury-gold shadow-lg shadow-luxury-gold/20' : 'bg-[#121214] text-zinc-500 border-zinc-800 hover:border-zinc-700 hover:text-zinc-300'}">${l}</button>`;
+                        return `<button onclick="setSort('${keys[i]}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap border-2 ${active ? 'bg-luxury-dollar text-black border-luxury-dollar shadow-lg shadow-luxury-dollar/20' : 'bg-[#121214] text-zinc-500 border-white/15 hover:border-zinc-700 hover:text-zinc-300'}">${l}</button>`;
                     }).join('')}
                 </div>
 
                 <div class="space-y-3 pb-6">
-                    ${txList.length === 0 ? `<div class="text-center py-16 bg-[#121214] rounded-[2rem] border border-dashed border-zinc-800"><div class="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800"><i class="ph-fill ph-magnifying-glass text-3xl text-zinc-600"></i></div><p class="text-zinc-500 font-medium text-sm">İşlem bulunamadı.</p></div>` : ''}
+                    ${txList.length === 0 ? `<div class="text-center py-16 bg-[#121214] rounded-[2rem] border-2 border-dashed border-zinc-800"><div class="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800"><i class="ph-fill ph-magnifying-glass text-3xl text-zinc-600"></i></div><p class="text-zinc-500 font-medium text-sm">İşlem bulunamadı.</p></div>` : ''}
                     ${txList.map((tx, i) => `
-                        <div class="bg-[#121214] p-4 rounded-2xl border border-zinc-800/50 flex justify-between items-center group active:scale-[0.98] transition-all hover:bg-zinc-900/50 animate-fade-in-up stagger-${(i%5)+1}">
+                        <div class="bg-[#121214] p-4 rounded-2xl border-2 border-white/15 flex justify-between items-center group active:scale-[0.98] transition-all hover:bg-zinc-900/50 animate-fade-in-up stagger-${(i%5)+1} card-border">
                             <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-2xl ${tx.type === 'income' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'} flex items-center justify-center text-xl shadow-sm">
+                                <div class="w-12 h-12 rounded-2xl ${tx.type === 'income' ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'} flex items-center justify-center text-xl shadow-sm">
                                     <i class="ph-fill ${getCategoryIcon(tx.category)}"></i>
                                 </div>
                                 <div>
@@ -491,7 +661,7 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <p class="font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-zinc-200'} text-base">
+                                <p class="font-bold ${tx.type === 'income' ? 'text-luxury-income' : 'text-zinc-200'} text-base">
                                     ${tx.type === 'income' ? '+' : '-'}₺${tx.amount.toLocaleString('tr-TR')}
                                 </p>
                             </div>
@@ -502,89 +672,216 @@
         }
 
         function renderWallet(container) {
-            const income = appData.transactions.filter(t => t.type === 'income').reduce((acc, c) => acc + c.amount, 0);
-            const expense = appData.transactions.filter(t => t.type === 'expense').reduce((acc, c) => acc + c.amount, 0);
+            // ... (variables unchanged) ...
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const thisMonthTx = appData.transactions.filter(t => { const d = t.date.split('.'); return parseInt(d[1]) === currentMonth + 1 && parseInt(d[2]) === now.getFullYear(); });
+            const income = thisMonthTx.filter(t => t.type === 'income').reduce((acc, c) => acc + c.amount, 0);
+            const expense = thisMonthTx.filter(t => t.type === 'expense').reduce((acc, c) => acc + c.amount, 0);
+            const totalDebt = appData.debts.filter(d => d.type === 'debt').reduce((acc, c) => acc + c.amount, 0);
             const net = income - expense;
             
-            let advice = { title: "Denge Durumu", desc: "Gelir ve giderleriniz dengede.", bg: "bg-zinc-900 border-zinc-800", icon: "ph-scales text-zinc-400" };
-            if (net > 0) advice = { title: "Pozitif Akış 🚀", desc: `6 ayda yaklaşık <strong>₺${(net*6).toLocaleString('tr-TR')}</strong> birikim öngörülüyor.`, bg: "bg-gradient-to-br from-emerald-900/40 to-emerald-950/40 border-emerald-900/50", icon: "ph-trend-up text-emerald-400" };
-            else if (net < 0) advice = { title: "Negatif Akış ⚠️", desc: `Harcamaları kısmazsan 6 ayda <strong>₺${Math.abs(net*6).toLocaleString('tr-TR')}</strong> açık verebilirsin.`, bg: "bg-gradient-to-br from-rose-900/40 to-rose-950/40 border-rose-900/50", icon: "ph-warning text-rose-400" };
-
-            let healthScore = 50;
-            if (income > 0) healthScore = Math.min(100, Math.max(0, 50 + ((income-expense)/income * 150)));
-            else if (expense > 0) healthScore = 10;
-            healthScore = Math.round(healthScore);
-            
-            let scoreColor = healthScore >= 80 ? "text-emerald-400" : healthScore < 40 ? "text-rose-400" : "text-orange-400";
-            let strokeColor = healthScore >= 80 ? "#34d399" : healthScore < 40 ? "#fb7185" : "#fb923c";
+            // ... (health score logic unchanged) ...
+            let healthScore = 50; 
+            let healthStatus = "Dengede";
+            let healthColor = "text-zinc-400";
+            let healthStroke = "#a1a1aa";
+            if (income > 0) {
+                const savingsRate = (net / income) * 100;
+                if (savingsRate > 20) healthScore += 30; else if (savingsRate > 10) healthScore += 20; else if (savingsRate > 0) healthScore += 10; else healthScore -= 20; 
+                const debtRatio = (totalDebt / income) * 100;
+                if (debtRatio > 50) healthScore -= 20; else if (debtRatio > 20) healthScore -= 10; else if (totalDebt === 0) healthScore += 10;
+            } else if (expense > 0) { healthScore = 10; }
+            healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
+            if (healthScore >= 80) { healthStatus = "Mükemmel"; healthColor = "text-luxury-dollar"; healthStroke = "#10B981"; }
+            else if (healthScore >= 60) { healthStatus = "İyi"; healthColor = "text-luxury-income"; healthStroke = "#FACC15"; }
+            else if (healthScore >= 40) { healthStatus = "İdare Eder"; healthColor = "text-orange-400"; healthStroke = "#fb923c"; }
+            else { healthStatus = "Riskli"; healthColor = "text-luxury-expense"; healthStroke = "#F43F5E"; }
             const strokeDashoffset = 251 - (healthScore / 100) * 251;
-
-            const chartBars = Array.from({length:6}).map((_, i) => {
-                const variation = 0.8 + Math.random() * 0.3;
-                const max = Math.max(income, expense) || 100;
-                return { label: i===0?'Şimdi':`${i} Ay`, hInc: (i===0?income:income*variation)/max*100, hExp: (i===0?expense:expense*variation)/max*100 };
-            }).reverse();
+            const month6 = net * 6;
+            const year1 = net * 12;
+            const projectionColor = net >= 0 ? 'text-luxury-dollar' : 'text-luxury-expense';
+            const projectionSign = net >= 0 ? '+' : '';
 
             container.innerHTML = `
-                <div class="${advice.bg} border p-6 rounded-[2rem] mb-6 relative overflow-hidden animate-fade-in-up">
-                    <div class="relative z-10">
-                        <div class="flex items-center gap-2 mb-2">
-                            <i class="ph-fill ${advice.icon} text-xl"></i><span class="text-[10px] font-bold tracking-widest uppercase text-zinc-400">Gelecek Tahmini</span>
+                <!-- HERO -->
+                <div class="bg-[#121214] p-0 rounded-[2rem] border-2 border-white/15 relative overflow-hidden mb-6 animate-fade-in-up shadow-2xl card-border">
+                    <div class="p-6 pb-0 z-10 relative flex justify-between items-start">
+                        <div>
+                            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1">Nakit Akışı</p>
+                            <h3 class="text-3xl font-black text-white tracking-tight">₺${(income-expense).toLocaleString('tr-TR')}</h3>
+                            <span class="text-xs font-bold ${net >= 0 ? 'text-luxury-dollar' : 'text-luxury-expense'} bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 mt-1 inline-block">
+                                ${net >= 0 ? '+' : ''}%${income > 0 ? Math.round((Math.abs(net)/income)*100) : 0} Marj
+                            </span>
                         </div>
-                        <h2 class="text-xl font-bold text-white mb-1">${advice.title}</h2>
-                        <p class="text-sm text-zinc-300 leading-relaxed font-medium">${advice.desc}</p>
+                        <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-800">
+                            <i class="ph-fill ph-chart-line-up text-luxury-dollar text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="w-full h-32 mt-4 relative opacity-90">${renderTrendChart(thisMonthTx)}</div>
+                </div>
+
+                <!-- GRİD: Sağlık & Hedefler -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-[#121214] p-6 rounded-[2rem] border-2 border-white/15 relative overflow-hidden animate-fade-in-up stagger-1 card-border">
+                        <h3 class="font-bold text-zinc-300 text-sm mb-4">Finansal Sağlık</h3>
+                        <div class="flex items-center justify-between">
+                            <div><span class="text-4xl font-black ${healthColor} tracking-tighter">${healthScore}</span><p class="text-xs text-zinc-500 font-bold uppercase mt-1">${healthStatus}</p></div>
+                            <div class="relative w-24 h-24"><svg class="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]"><circle cx="48" cy="48" r="40" stroke="#27272a" stroke-width="6" fill="transparent" /><circle cx="48" cy="48" r="40" stroke="${healthStroke}" stroke-width="6" fill="transparent" stroke-dasharray="251" stroke-dashoffset="${strokeDashoffset}" stroke-linecap="round" class="transition-all duration-1000 ease-out" /></svg></div>
+                        </div>
+                        <p class="text-[10px] text-zinc-500 mt-4 leading-relaxed border-t border-zinc-800/50 pt-3">${healthScore >= 80 ? "Mükemmel yönetim! Birikim hedeflerine odaklan." : "Harcamalarını optimize ederek puanını yükseltebilirsin."}</p>
+                    </div>
+
+                    <div class="bg-[#121214] p-6 rounded-[2rem] border-2 border-white/15 animate-fade-in-up stagger-2 flex flex-col h-full card-border">
+                        <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-zinc-300 text-sm">Hedeflerim</h3><button onclick="toggleModal('addGoalModal')" class="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 text-luxury-dollar flex items-center justify-center hover:bg-zinc-800 transition-colors"><i class="ph-bold ph-plus"></i></button></div>
+                        <div class="flex-1 overflow-y-auto max-h-48 space-y-4 pr-1 custom-scroll">
+                            ${appData.goals.length === 0 ? '<div class="h-full flex flex-col items-center justify-center text-zinc-600 gap-2 min-h-[100px]"><i class="ph-duotone ph-target text-3xl"></i><span class="text-xs">Hedef belirle</span></div>' : appData.goals.map((g, i) => { const p = Math.min(100, (g.current / g.target) * 100); return `<div onclick="addMoneyToGoal(${i})" class="group cursor-pointer select-none"><div class="flex justify-between text-xs mb-1.5"><span class="font-bold text-zinc-400 group-hover:text-white transition-colors">${g.name}</span><span class="text-luxury-dollar font-bold">%${Math.round(p)}</span></div><div class="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-zinc-800 relative"><div class="bg-gradient-to-r from-luxury-dollar to-luxury-dollarDark h-full rounded-full transition-all duration-700 shadow-[0_0_10px_rgba(16,185,129,0.3)]" style="width: ${p}%"></div></div><p class="text-[9px] text-zinc-600 mt-1 text-right font-medium group-hover:text-zinc-500 transition-colors">₺${g.current.toLocaleString()} / ₺${g.target.toLocaleString()}</p></div>`; }).join('')}
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <div class="bg-[#121214] p-6 rounded-[2rem] border border-zinc-800 flex flex-col items-center relative animate-fade-in-up stagger-1">
-                         <h3 class="font-bold text-zinc-300 text-sm mb-4 w-full">Finansal Sağlık</h3>
-                         <div class="relative w-36 h-36">
-                            <svg class="w-full h-full transform -rotate-90 drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]"><circle cx="72" cy="72" r="40" stroke="#27272a" stroke-width="8" fill="transparent" /><circle cx="72" cy="72" r="40" stroke="${strokeColor}" stroke-width="8" fill="transparent" stroke-dasharray="251" stroke-dashoffset="${strokeDashoffset}" stroke-linecap="round" class="transition-all duration-1000 ease-out" /></svg>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center"><span class="text-4xl font-bold ${scoreColor}">${healthScore}</span></div>
-                         </div>
-                    </div>
-                    <div class="bg-[#121214] p-6 rounded-[2rem] border border-zinc-800 animate-fade-in-up stagger-2">
-                        <div class="flex justify-between items-center mb-6">
-                             <h3 class="font-bold text-zinc-300 text-sm">Görünüm</h3>
-                             <div class="flex gap-3 text-[10px] font-bold"><div class="flex items-center gap-1.5 text-emerald-400"><div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>Gelir</div><div class="flex items-center gap-1.5 text-rose-400"><div class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></div>Gider</div></div>
-                        </div>
-                        <div class="flex items-end justify-between h-32 gap-3">
-                            ${chartBars.map(bar => `<div class="flex flex-col items-center gap-2 w-full h-full justify-end group"><div class="flex items-end justify-center w-full gap-1 h-full relative"><div style="height: ${Math.max(10, bar.hInc)}%" class="w-1.5 bg-emerald-500 rounded-full opacity-60 group-hover:opacity-100 transition-all shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div><div style="height: ${Math.max(10, bar.hExp)}%" class="w-1.5 bg-rose-500 rounded-full opacity-60 group-hover:opacity-100 transition-all shadow-[0_0_12px_rgba(244,63,94,0.4)]"></div></div><span class="text-[9px] text-zinc-600 font-bold uppercase group-hover:text-zinc-400 transition-colors">${bar.label}</span></div>`).join('')}
-                        </div>
-                    </div>
+                <!-- GELECEK SİMÜLASYONU -->
+                <h3 class="font-bold text-zinc-300 text-sm mb-4 ml-1 uppercase tracking-wide flex items-center gap-2 animate-fade-in-up stagger-2"><i class="ph-fill ph-crystal-ball text-luxury-dollar"></i> Gelecek Simülasyonu</h3>
+                <div class="grid grid-cols-2 gap-3 mb-8 animate-fade-in-up stagger-2">
+                    <div class="bg-gradient-to-br from-[#121214] to-black p-5 rounded-[1.5rem] border-2 border-white/15 relative group overflow-hidden card-border"><div class="absolute inset-0 bg-luxury-dollar/5 opacity-0 group-hover:opacity-100 transition-opacity"></div><p class="text-[10px] text-zinc-500 font-bold uppercase mb-2">6 Ay Sonra</p><p class="text-lg font-black ${projectionColor} tracking-tight">${projectionSign}₺${Math.abs(month6).toLocaleString('tr-TR')}</p><p class="text-[9px] text-zinc-600 mt-1 font-medium">Potansiyel Durum</p></div>
+                    <div class="bg-gradient-to-br from-[#121214] to-black p-5 rounded-[1.5rem] border-2 border-white/15 relative group overflow-hidden card-border"><div class="absolute inset-0 bg-luxury-dollar/5 opacity-0 group-hover:opacity-100 transition-opacity"></div><p class="text-[10px] text-zinc-500 font-bold uppercase mb-2">1 Yıl Sonra</p><p class="text-lg font-black ${projectionColor} tracking-tight">${projectionSign}₺${Math.abs(year1).toLocaleString('tr-TR')}</p><p class="text-[9px] text-zinc-600 mt-1 font-medium">Potansiyel Durum</p></div>
                 </div>
-                <h3 class="font-bold text-zinc-300 text-sm mb-4 ml-1 uppercase tracking-wide">Kategori Analizi</h3>
-                ${renderCategoryAnalysis()}
+
+                ${renderSavingsOpportunity(thisMonthTx, income)}
+                <h3 class="font-bold text-zinc-300 text-sm mb-4 ml-1 uppercase tracking-wide animate-fade-in-up stagger-3">Harcama Dağılımı</h3>
+                ${renderPieChart()}
             `;
         }
 
-        function renderCategoryAnalysis() {
+        // --- YARDIMCI BİLEŞENLER ---
+        function renderSavingsOpportunity(transactions, income) {
+            // ... (unchanged)
+            const expenses = transactions.filter(t => t.type === 'expense');
+            if (expenses.length === 0) return '';
+            const catMap = {};
+            expenses.forEach(t => { catMap[t.category] = (catMap[t.category] || 0) + t.amount; });
+            const sortedCats = Object.keys(catMap).sort((a,b) => catMap[b] - catMap[a]);
+            const topCat = sortedCats[0];
+            const topAmount = catMap[topCat];
+            const potentialSave = topAmount * 0.20; 
+            const yearlyImpact = potentialSave * 12;
+
+            return `
+                <div class="bg-gradient-to-r from-zinc-900 to-[#121214] p-5 rounded-[1.5rem] border-l-4 border-2 border-zinc-800 border-l-luxury-dollar mb-8 animate-fade-in-up stagger-3 shadow-lg card-border">
+                    <div class="flex items-start gap-4">
+                        <div class="min-w-[40px] h-10 rounded-full bg-luxury-dollar/10 flex items-center justify-center text-luxury-dollar border border-luxury-dollar/20"><i class="ph-fill ph-lightbulb text-xl"></i></div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white mb-1">Tasarruf Fırsatı</h4>
+                            <p class="text-xs text-zinc-400 leading-relaxed mb-3">En yüksek harcama: <span class="text-white font-bold">${topCat}</span> (₺${topAmount.toLocaleString()}). %20 tasarruf ile:</p>
+                            <div class="flex gap-2">
+                                <span class="px-3 py-1.5 rounded-lg bg-emerald-900/20 text-emerald-400 text-[10px] font-bold border border-emerald-900/30">Ayda +₺${Math.round(potentialSave).toLocaleString()}</span>
+                                <span class="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 text-[10px] font-bold border border-zinc-700">Yılda +₺${Math.round(yearlyImpact).toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTrendChart(transactions) {
+            // ... (unchanged)
+            const days = 15;
+            const dataPoints = [];
+            const now = new Date();
+            for(let i = days; i >= 0; i--) {
+                const d = new Date(); d.setDate(now.getDate() - i); const dateStr = d.toLocaleDateString('tr-TR');
+                const txOnDate = transactions.filter(t => t.date === dateStr);
+                const dailyNet = txOnDate.reduce((acc, t) => acc + (t.type==='income'?t.amount:-t.amount), 0);
+                const prevVal = dataPoints.length > 0 ? dataPoints[dataPoints.length-1] : 1000; 
+                dataPoints.push(prevVal + dailyNet + (Math.random() * 200 - 100)); 
+            }
+            const min = Math.min(...dataPoints);
+            const range = (Math.max(...dataPoints) - min) || 1;
+            const width = 1000; const height = 200; const step = width / (dataPoints.length - 1);
+            let pathD = `M 0 ${height - ((dataPoints[0] - min) / range * height)}`;
+            for(let i = 1; i < dataPoints.length; i++) {
+                const x = i * step; const y = height - ((dataPoints[i] - min) / range * height);
+                const prevX = (i - 1) * step; const prevY = height - ((dataPoints[i-1] - min) / range * height);
+                const cp1x = prevX + (step / 2); const cp1y = prevY; const cp2x = x - (step / 2); const cp2y = y;
+                pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x} ${y}`;
+            }
+            const areaPath = `${pathD} L ${width} ${height} L 0 ${height} Z`;
+            return `
+                <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="w-full h-full overflow-visible">
+                    <defs><linearGradient id="goldGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#10B981" stop-opacity="0.5"/><stop offset="100%" stop-color="#10B981" stop-opacity="0"/></linearGradient></defs>
+                    <path d="${areaPath}" fill="url(#goldGradient)" />
+                    <path d="${pathD}" fill="none" stroke="#10B981" stroke-width="4" stroke-linecap="round" vector-effect="non-scaling-stroke" class="drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                    <circle cx="${width}" cy="${height - ((dataPoints[dataPoints.length-1] - min) / range * height)}" r="6" fill="#fff" class="animate-pulse" />
+                </svg>
+            `;
+        }
+
+        function renderPieChart() {
+            // ... (unchanged)
             const expenses = appData.transactions.filter(t => t.type === 'expense');
             const categories = {};
             let totalExp = 0;
             expenses.forEach(tx => { categories[tx.category] = (categories[tx.category] || 0) + tx.amount; totalExp += tx.amount; });
             
-            if(Object.keys(categories).length === 0) return '<div class="bg-[#121214] p-8 rounded-[2rem] border border-dashed border-zinc-800 text-center text-zinc-500 text-sm font-medium">Veri yok.</div>';
-            
-            return `<div class="bg-[#121214] p-6 rounded-[2rem] border border-zinc-800 animate-fade-in-up stagger-3">${Object.keys(categories).map(cat => {
-                const percent = totalExp > 0 ? (categories[cat]/totalExp)*100 : 0;
-                return `<div class="mb-5 last:mb-0"><div class="flex justify-between text-sm mb-2"><span class="font-bold text-zinc-300 flex items-center gap-2"><i class="ph-fill ${getCategoryIcon(cat)} text-luxury-gold"></i> ${cat}</span><span class="text-zinc-400 font-medium">₺${categories[cat].toLocaleString('tr-TR')}</span></div><div class="w-full bg-zinc-900 rounded-full h-1.5 overflow-hidden"><div class="bg-luxury-gold h-1.5 rounded-full shadow-[0_0_10px_rgba(212,175,55,0.4)]" style="width: ${percent}%"></div></div></div>`;
-            }).join('')}</div>`;
+            if(totalExp === 0) return '<div class="bg-[#121214] p-8 rounded-[2rem] border-2 border-dashed border-zinc-800 text-center text-zinc-500 text-sm font-medium">Veri yok.</div>';
+
+            let conicStr = [];
+            let currentDeg = 0;
+            const sortedCats = Object.keys(categories).sort((a,b) => categories[b] - categories[a]);
+            let legendHtml = '';
+
+            sortedCats.forEach(cat => {
+                const deg = (categories[cat] / totalExp) * 360;
+                const color = getCategoryColor(cat);
+                conicStr.push(`${color} ${currentDeg}deg ${currentDeg + deg}deg`);
+                currentDeg += deg;
+                legendHtml += `<div class="flex items-center justify-between text-xs mb-2 last:mb-0"><div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background-color: ${color}"></div><span class="text-zinc-400 font-medium">${cat}</span></div><span class="text-zinc-300 font-bold">₺${categories[cat].toLocaleString()}</span></div>`;
+            });
+
+            return `
+                <div class="bg-[#121214] p-6 rounded-[2rem] border-2 border-white/15 animate-fade-in-up stagger-3 flex gap-6 items-center card-border">
+                    <div class="relative w-32 h-32 flex-shrink-0">
+                        <div class="w-full h-full rounded-full pie-chart shadow-xl" style="background: conic-gradient(${conicStr.join(', ')})"></div>
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span class="text-[10px] font-bold text-zinc-500 bg-[#121214] px-2 py-1 rounded-md border border-zinc-800">Toplam<br>₺${totalExp.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto max-h-40 custom-scroll pr-2">${legendHtml}</div>
+                </div>
+            `;
         }
 
         function renderDebts(container) {
+            // ... (unchanged)
             const debts = appData.debts.filter(d => d.type === 'debt');
-            const categories = { 'Kredi Kartı': { amount: 0, count: 0, icon: 'ph-credit-card', color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' }, 'Kredi': { amount: 0, count: 0, icon: 'ph-bank', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' }, 'Elden Borç': { amount: 0, count: 0, icon: 'ph-hand-coins', color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' } };
+            const categories = { 
+                'Kredi Kartı': { amount: 0, count: 0, icon: 'ph-credit-card', color: 'text-purple-400 bg-purple-500/10 border-purple-500/20', chartColor: '#a855f7' }, 
+                'Kredi': { amount: 0, count: 0, icon: 'ph-bank', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20', chartColor: '#3b82f6' }, 
+                'Elden Borç': { amount: 0, count: 0, icon: 'ph-hand-coins', color: 'text-orange-400 bg-orange-500/10 border-orange-500/20', chartColor: '#f97316' } 
+            };
+            
             let totalDebt = 0;
             debts.forEach(d => { const cat = d.category || 'Elden Borç'; if(categories[cat]) { categories[cat].amount += d.amount; categories[cat].count += 1; } totalDebt += d.amount; });
 
+            let chartHtml = '';
+            if (totalDebt > 0) {
+                let conicStr = []; let currentDeg = 0; let legendHtml = '';
+                Object.entries(categories).forEach(([name, data]) => {
+                    if(data.amount > 0) {
+                        const deg = (data.amount / totalDebt) * 360; const percent = Math.round((data.amount / totalDebt) * 100);
+                        conicStr.push(`${data.chartColor} ${currentDeg}deg ${currentDeg + deg}deg`); currentDeg += deg;
+                        legendHtml += `<div class="flex items-center justify-between text-xs mb-3 last:mb-0 group"><div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]" style="background-color: ${data.chartColor}"></div><span class="text-zinc-400 font-medium group-hover:text-white transition-colors">${name}</span></div><div class="text-right"><span class="text-zinc-300 font-bold block">₺${data.amount.toLocaleString('tr-TR')}</span><span class="text-[9px] text-zinc-500 font-mono">%${percent}</span></div></div>`;
+                    }
+                });
+                chartHtml = `<div class="bg-[#121214] p-6 rounded-[2rem] border-2 border-white/15 mb-8 flex items-center gap-8 animate-fade-in-up shadow-xl relative overflow-hidden card-border"><div class="absolute top-0 right-0 w-32 h-32 bg-luxury-dollar/5 rounded-full blur-3xl -mr-10 -mt-10"></div><div class="relative w-32 h-32 flex-shrink-0"><div class="w-full h-full rounded-full pie-chart shadow-2xl" style="background: conic-gradient(${conicStr.join(', ')})"></div><div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"><span class="text-[9px] text-zinc-500 uppercase tracking-wider font-bold mb-0.5">Toplam</span><span class="text-xs font-black text-white bg-[#121214]/90 px-2 py-1 rounded-lg backdrop-blur-md border border-zinc-800">₺${totalDebt.toLocaleString('tr-TR', { notation: "compact", maximumFractionDigits: 1 })}</span></div></div><div class="flex-1 z-10">${legendHtml}</div></div>`;
+            }
+
             container.innerHTML = `
-                <div class="grid grid-cols-1 gap-3 mb-8">
+                <div class="grid grid-cols-1 gap-3 mb-6">
                     ${Object.entries(categories).map(([name, data], i) => `
-                        <div class="bg-[#121214] p-5 rounded-[1.5rem] border border-zinc-800 flex items-center justify-between group transition-all hover:bg-zinc-900 animate-fade-in-up stagger-${i+1}">
+                        <div class="bg-[#121214] p-5 rounded-[1.5rem] border-2 border-white/15 flex items-center justify-between group transition-all hover:bg-zinc-900 animate-fade-in-up stagger-${i+1} card-border">
                             <div class="flex items-center gap-4">
-                                <div class="w-14 h-14 rounded-2xl ${data.color} flex items-center justify-center text-2xl shadow-sm border">
+                                <div class="w-14 h-14 rounded-2xl ${data.color} flex items-center justify-center text-2xl shadow-sm border border-white/5">
                                     <i class="ph-fill ${data.icon}"></i>
                                 </div>
                                 <div>
@@ -599,70 +896,96 @@
                         </div>
                     `).join('')}
                 </div>
-                <h3 class="font-bold text-zinc-300 text-sm mb-4 ml-1 uppercase tracking-wide">Borç Listesi</h3>
+                ${chartHtml}
+                <h3 class="font-bold text-zinc-300 text-sm mb-4 ml-1 uppercase tracking-wide flex items-center gap-2"><i class="ph-fill ph-list-dashes"></i> Detaylı Liste</h3>
                 <div class="space-y-3 pb-32">
-                    ${debts.length === 0 ? `<div class="text-center py-12 bg-[#121214] rounded-[2rem] border border-dashed border-zinc-800"><i class="ph-fill ph-check-circle text-4xl text-zinc-700 mb-3 block"></i><span class="text-zinc-500 font-medium">Borcunuz yok.</span></div>` : ''}
+                    ${debts.length === 0 ? `<div class="text-center py-16 bg-[#121214] rounded-[2rem] border-2 border-dashed border-zinc-800"><div class="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800"><i class="ph-fill ph-check-circle text-4xl text-emerald-500/50"></i></div><p class="text-zinc-400 font-bold text-sm">Borcunuz bulunmuyor.</p><p class="text-zinc-600 text-xs mt-1">Harika gidiyorsun!</p></div>` : ''}
                     ${debts.map((item, i) => {
-                        let dateText = 'Tarih yok', dateClass = 'bg-zinc-900 text-zinc-500 border border-zinc-800';
+                        let dateText = 'Tarih yok'; let dateClass = 'bg-zinc-900 text-zinc-500 border border-zinc-800';
                         if (item.date) {
-                            const today = new Date(); const dP = item.date.split('.'); const due = new Date(dP[2], dP[1]-1, dP[0]);
-                            const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
-                            if (diffDays < 0) { dateText = `${Math.abs(diffDays)} gün gecikti`; dateClass = 'bg-rose-900/20 text-rose-400 border border-rose-900/30'; }
-                            else if (diffDays === 0) { dateText = 'Bugün'; dateClass = 'bg-orange-900/20 text-orange-400 border border-orange-900/30'; }
-                            else { dateText = `${diffDays} gün kaldı`; dateClass = 'bg-blue-900/20 text-blue-400 border border-blue-900/30'; }
+                            const today = new Date(); const dP = item.date.split('.'); const due = new Date(dP[2], dP[1]-1, dP[0]); const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+                            if (diffDays < 0) { dateText = `${Math.abs(diffDays)} gün gecikti`; dateClass = 'bg-rose-900/20 text-rose-400 border border-rose-900/30'; } else if (diffDays === 0) { dateText = 'Bugün'; dateClass = 'bg-orange-900/20 text-orange-400 border border-orange-900/30'; } else { dateText = `${diffDays} gün kaldı`; dateClass = 'bg-blue-900/20 text-blue-400 border border-blue-900/30'; }
                         }
                         const catData = categories[item.category] || categories['Elden Borç'];
-                        return `
-                        <div class="bg-[#121214] p-4 rounded-2xl border border-zinc-800/50 flex items-center justify-between animate-fade-in-up stagger-${(i%5)+1}">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-2xl ${catData.color.replace('border-', '')} flex items-center justify-center text-xl">
-                                    <i class="ph-fill ${catData.icon}"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-white text-[15px] mb-0.5">${item.name}</h4>
-                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${dateClass}">${dateText}</span>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-bold text-zinc-200 mb-1.5">₺${item.amount.toLocaleString('tr-TR')}</p>
-                                <div class="flex gap-1.5 justify-end">
-                                    <button onclick="payDebt('${item.name}', ${item.amount}, 'debt')" class="w-8 h-8 rounded-xl bg-emerald-900/20 text-emerald-400 border border-emerald-900/30 flex items-center justify-center hover:bg-emerald-900/40 transition-colors"><i class="ph-bold ph-check text-sm"></i></button>
-                                    <button onclick="deleteDebtByName('${item.name}')" class="w-8 h-8 rounded-xl bg-zinc-800 text-zinc-400 flex items-center justify-center hover:bg-rose-900/30 hover:text-rose-400 transition-colors"><i class="ph-bold ph-trash text-sm"></i></button>
-                                </div>
-                            </div>
-                        </div>`;
+                        return `<div class="bg-[#121214] p-4 rounded-2xl border-2 border-white/15 flex items-center justify-between group transition-all hover:border-zinc-700 animate-fade-in-up stagger-${(i%5)+1} card-border"><div class="flex items-center gap-4"><div class="w-12 h-12 rounded-2xl ${catData.color.replace('border-', '')} flex items-center justify-center text-xl shadow-inner"><i class="ph-fill ${catData.icon}"></i></div><div><h4 class="font-bold text-white text-[15px] mb-0.5">${item.name}</h4><span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${dateClass}">${dateText}</span></div></div><div class="text-right"><p class="font-bold text-zinc-200 mb-1.5">₺${item.amount.toLocaleString('tr-TR')}</p><div class="flex gap-1.5 justify-end"><button onclick="payDebt('${item.name}', ${item.amount}, 'debt')" class="w-8 h-8 rounded-xl bg-emerald-900/20 text-emerald-400 border border-emerald-900/30 flex items-center justify-center hover:bg-emerald-900/40 transition-colors"><i class="ph-bold ph-check text-sm"></i></button><button onclick="deleteDebtByName('${item.name}')" class="w-8 h-8 rounded-xl bg-zinc-800 text-zinc-400 flex items-center justify-center hover:bg-rose-900/30 hover:text-rose-400 transition-colors"><i class="ph-bold ph-trash text-sm"></i></button></div></div></div>`;
                     }).join('')}
                 </div>
-                <div class="fixed bottom-28 left-5 right-5 z-30">
-                    <div class="bg-gradient-to-r from-zinc-100 to-white text-black p-5 rounded-[1.5rem] shadow-2xl shadow-white/10 flex justify-between items-center animate-fade-in-up ring-4 ring-black/50">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-2xl bg-black/5 flex items-center justify-center border border-black/5"><i class="ph-fill ph-sigma text-2xl"></i></div>
-                            <div><p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">Toplam Borç</p><p class="font-black text-2xl tracking-tight">₺${totalDebt.toLocaleString('tr-TR')}</p></div>
-                        </div>
-                        <button onclick="toggleModal('addDebtModal')" class="bg-black hover:bg-zinc-800 text-white px-5 py-3 rounded-xl text-xs font-bold transition-all shadow-lg">Hızlı Ekle</button>
-                    </div>
-                </div>
+                <div class="fixed bottom-28 left-5 right-5 z-30"><div class="bg-gradient-to-r from-zinc-100 to-white text-black p-5 rounded-[1.5rem] shadow-2xl shadow-white/10 flex justify-between items-center animate-fade-in-up ring-4 ring-black/50"><div class="flex items-center gap-4"><div class="w-12 h-12 rounded-2xl bg-black/5 flex items-center justify-center border border-black/5"><i class="ph-fill ph-sigma text-2xl"></i></div><div><p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">Toplam Borç</p><p class="font-black text-2xl tracking-tight">₺${totalDebt.toLocaleString('tr-TR')}</p></div></div><button onclick="toggleModal('addDebtModal')" class="bg-black hover:bg-zinc-800 text-white px-5 py-3 rounded-xl text-xs font-bold transition-all shadow-lg active:scale-95">Hızlı Ekle</button></div></div>
             `;
         }
 
         function renderSettings(container) {
             container.innerHTML = `
                 <div class="space-y-4 animate-fade-in-up">
-                    <div class="bg-[#121214] rounded-[2rem] border border-zinc-800 overflow-hidden">
-                        <div class="p-6 border-b border-zinc-800 flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800"><i class="ph-fill ph-user text-2xl text-zinc-500"></i></div>
-                            <div><h3 class="font-bold text-white">Kullanıcı</h3><p class="text-xs text-luxury-gold font-bold">Premium Üye</p></div>
+                    <div class="bg-[#121214] rounded-[2rem] border-2 border-white/15 overflow-hidden card-border">
+                        <div class="p-6 border-b border-white/15 flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800"><i class="ph-fill ph-user text-2xl text-zinc-500"></i></div>
+                                <div><h3 class="font-bold text-white">${appData.user.name}</h3><p class="text-xs text-luxury-dollar font-bold">Premium Üye</p></div>
+                            </div>
+                            <button onclick="editProfileName()" class="text-zinc-500 hover:text-white transition-colors"><i class="ph-bold ph-pencil-simple text-xl"></i></button>
                         </div>
-                        <button onclick="if(confirm('Tüm veriler silinecek. Emin misin?')) { localStorage.removeItem(APP_DATA_KEY); location.reload(); }" class="w-full p-5 text-left flex items-center gap-3 text-rose-500 hover:bg-rose-900/10 transition-colors font-bold text-sm">
+                        
+                        <div class="p-5 border-b border-white/15">
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center"><i class="ph-bold ph-eye-slash text-lg text-indigo-400"></i></div>
+                                    <span class="text-zinc-300 font-bold text-sm">Bakiyeyi Varsayılan Gizle</span>
+                                </div>
+                                <div class="relative inline-block w-12 align-middle select-none">
+                                    <input type="checkbox" onchange="togglePrivacyMode()" ${appData.settings.privacyMode ? 'checked' : ''} class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-zinc-500 border-4 border-[#121214] appearance-none cursor-pointer transition-all duration-300 left-0"/>
+                                    <label class="toggle-label block overflow-hidden h-6 rounded-full bg-zinc-800 cursor-pointer transition-colors"></label>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="p-2">
+                            <button onclick="backupJSON()" class="w-full p-4 text-left flex items-center gap-3 text-zinc-300 hover:bg-zinc-900 rounded-xl transition-colors font-bold text-sm mb-1">
+                                <div class="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center"><i class="ph-bold ph-download-simple text-lg text-emerald-400"></i></div> Tam Yedek Al (JSON)
+                            </button>
+                            
+                            <button onclick="triggerImport()" class="w-full p-4 text-left flex items-center gap-3 text-zinc-300 hover:bg-zinc-900 rounded-xl transition-colors font-bold text-sm mb-1">
+                                <div class="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center"><i class="ph-bold ph-upload-simple text-lg text-blue-400"></i></div> Yedekten Geri Yükle
+                            </button>
+                            <input type="file" id="import-file" class="hidden" accept=".json" onchange="handleImport(event)">
+
+                            <button onclick="exportCSV()" class="w-full p-4 text-left flex items-center gap-3 text-zinc-300 hover:bg-zinc-900 rounded-xl transition-colors font-bold text-sm mb-1">
+                                <div class="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center"><i class="ph-bold ph-file-csv text-lg text-orange-400"></i></div> İşlemleri İndir (CSV)
+                            </button>
+
+                            <button onclick="exportPDF()" class="w-full p-4 text-left flex items-center gap-3 text-zinc-300 hover:bg-zinc-900 rounded-xl transition-colors font-bold text-sm">
+                                <div class="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center"><i class="ph-bold ph-file-pdf text-lg text-rose-400"></i></div> Rapor İndir (PDF)
+                            </button>
+                        </div>
+
+                        <button onclick="if(confirm('Tüm veriler silinecek. Emin misin?')) { localStorage.removeItem(APP_DATA_KEY); location.reload(); }" class="w-full p-5 text-left flex items-center gap-3 text-rose-500 hover:bg-rose-900/10 transition-colors font-bold text-sm border-t border-white/15">
                             <div class="w-10 h-10 rounded-xl bg-rose-900/20 flex items-center justify-center"><i class="ph-bold ph-trash text-lg"></i></div> Verileri Sıfırla
                         </button>
                     </div>
-                    <div class="bg-[#121214] rounded-[2rem] p-6 border border-zinc-800 flex items-center gap-4 text-zinc-500">
-                        <i class="ph-fill ph-info text-2xl text-luxury-gold"></i>
-                        <div><p class="font-bold text-sm text-zinc-300">Finans Asistanım</p><p class="text-[11px] font-medium">v2.1 • Obsidian & Gold</p></div>
+                    
+                    <div class="bg-[#121214] rounded-[2rem] p-6 border-2 border-white/15 flex items-center gap-4 text-zinc-500 card-border">
+                        <i class="ph-fill ph-info text-2xl text-luxury-dollar"></i>
+                        <div><p class="font-bold text-sm text-zinc-300">Finans Asistanım</p><p class="text-[11px] font-medium">v3.3 • Dollar Edition</p></div>
                     </div>
                 </div>
             `;
+        }
+
+        // --- HEDEF (GOALS) Logic ---
+        function handleAddGoal(e) {
+            e.preventDefault();
+            const name = document.getElementById('goal-name').value;
+            const target = parseFloat(document.getElementById('goal-target').value);
+            const current = parseFloat(document.getElementById('goal-current').value) || 0;
+            appData.goals.push({ id: Date.now(), name, target, current });
+            saveData(); toggleModal('addGoalModal'); e.target.reset(); if(document.querySelector('[data-tab="wallet"]').classList.contains('active')) renderTab('wallet');
+        }
+        function addMoneyToGoal(idx) {
+            const amount = prompt(`"${appData.goals[idx].name}" hedefine ne kadar eklemek istersin?`);
+            if(amount && !isNaN(parseFloat(amount))) {
+                appData.goals[idx].current += parseFloat(amount);
+                saveData(); renderTab('wallet');
+            }
         }
 
         // --- Debt Helpers ---
@@ -691,7 +1014,7 @@
             currentTxType = type;
             const inc = document.getElementById('btn-income'), exp = document.getElementById('btn-expense'), debtOpt = document.getElementById('opt-debt-payment');
             if (type === 'income') {
-                inc.className = 'flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-emerald-900/80 text-emerald-400 border border-emerald-500/20 shadow-lg';
+                inc.className = 'flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-luxury-income text-black border border-yellow-500/20 shadow-lg';
                 exp.className = 'flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 text-zinc-500 hover:text-white';
                 if(debtOpt) debtOpt.classList.add('hidden');
                 if(document.getElementById('tx-category').value === 'Borç Ödeme') checkCategory('Maaş');
@@ -727,6 +1050,7 @@
             saveData(); toggleModal('addTransactionModal'); e.target.reset();
         }
 
+        // Başlangıç: Giriş Kontrolü
         renderTab('dashboard');
     </script>
 </body>
