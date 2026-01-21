@@ -222,9 +222,9 @@
                 </div>
                 
                 <form onsubmit="handleAddTransaction(event)" class="space-y-6">
-                    <!-- Switch -->
+                    <!-- Switch (GÜNCELLENDİ: Gelir Butonu Yeşil) -->
                     <div class="flex bg-zinc-900/50 p-1.5 rounded-2xl border-2 border-white/15">
-                        <button type="button" onclick="setTxType('income')" id="btn-income" class="flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-luxury-income text-black border border-yellow-500/20 shadow-lg">Gelir</button>
+                        <button type="button" onclick="setTxType('income')" id="btn-income" class="flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-luxury-dollar text-white border border-emerald-500/20 shadow-lg">Gelir</button>
                         <button type="button" onclick="setTxType('expense')" id="btn-expense" class="flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 text-zinc-500 hover:text-white">Gider</button>
                     </div>
 
@@ -422,6 +422,7 @@
                 modal.classList.remove('hidden');
                 setTimeout(() => { panel.style.transform = 'translateY(0)'; }, 10);
                 if(modalId === 'addTransactionModal') { 
+                    // Varsayılan olarak GELİR (Income) seç
                     setTxType('income'); 
                     document.getElementById('tx-category').value = 'Maaş'; 
                     document.getElementById('debt-selector-wrapper').classList.add('hidden'); 
@@ -1014,7 +1015,7 @@
             currentTxType = type;
             const inc = document.getElementById('btn-income'), exp = document.getElementById('btn-expense'), debtOpt = document.getElementById('opt-debt-payment');
             if (type === 'income') {
-                inc.className = 'flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-luxury-income text-black border border-yellow-500/20 shadow-lg';
+                inc.className = 'flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 bg-luxury-dollar text-white border border-emerald-500/20 shadow-lg';
                 exp.className = 'flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 text-zinc-500 hover:text-white';
                 if(debtOpt) debtOpt.classList.add('hidden');
                 if(document.getElementById('tx-category').value === 'Borç Ödeme') checkCategory('Maaş');
